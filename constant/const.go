@@ -24,3 +24,9 @@ const (
 const (
 	ReadMsgTimeoutErr = "context deadline exceeded"
 )
+
+const (
+	AllPermissionType      = "ALL"
+	ProducerPermissionType = "W"
+	ConsumerPermissionType = "R"
+)
