@@ -28,7 +28,7 @@ func ReadEarliestMsg(partitionedTopic string, maxWaitMs int, pulsarClient pulsar
 	return readNextMsg(readerOptions, maxWaitMs, pulsarClient)
 }
 
-func ReadLastedMsg(partitionedTopic string, maxWaitMs int, messageId *padmin.MessageId, pulsarClient pulsar.Client) (pulsar.Message, error) {
+func ReadLatestMsg(partitionedTopic string, maxWaitMs int, messageId *padmin.MessageId, pulsarClient pulsar.Client) (pulsar.Message, error) {
 	var msgId pulsar.MessageID
 	bytes, err := generateMsgBytes(messageId)
 	if err != nil {
@@ -47,6 +47,14 @@ func ReadLastedMsg(partitionedTopic string, maxWaitMs int, messageId *padmin.Mes
 		StartMessageIDInclusive: true,
 	}
 	return readNextMsg(readerOptions, maxWaitMs, pulsarClient)
+}
+
+func GetLatestMsgId(partitionedTopic string, client *padmin.PulsarAdmin) (*padmin.MessageId, error) {
+	tenant, namespace, topic, err := getTenantNamespaceTopicFromPartitionedTopic(partitionedTopic)
+	if err != nil {
+		return nil, err
+	}
+	return client.PersistentTopics.GetLastMessageId(tenant, namespace, topic)
 }
 
 func getTenantNamespaceTopicFromPartitionedTopic(partitionedTopic string) (tenant, namespace, shortPartitionedTopic string, err error) {

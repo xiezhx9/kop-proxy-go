@@ -126,7 +126,7 @@ func (o *OffsetManagerImpl) getCurrentLatestMsg() (pulsar.Message, error) {
 		logrus.Errorf("get lasted msgId failed. err: %s", err)
 		return nil, err
 	}
-	msg, err := utils.ReadLastedMsg(partitionedTopic, 500, messageId, o.client)
+	msg, err := utils.ReadLatestMsg(partitionedTopic, 500, messageId, o.client)
 	if err != nil {
 		logrus.Errorf("read Lasted Msg failed. err: %s", err)
 		return nil, err

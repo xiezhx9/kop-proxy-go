@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/protocol-laboratory/kafka-codec-go/knet"
 	"github.com/protocol-laboratory/pulsar-admin-go/padmin"
+	"github.com/sirupsen/logrus"
 	"sync"
 )
 
@@ -144,6 +145,8 @@ func (b *Broker) Run() error {
 }
 
 func (b *Broker) Close() {
-	b.knetServer.Stop()
+	if err := b.knetServer.Stop(); err != nil {
+		logrus.Errorf("stop broker failed: %v", err)
+	}
 	b.pClient.Close()
 }
