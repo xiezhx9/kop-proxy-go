@@ -26,12 +26,17 @@ type OffsetManagerImpl struct {
 	offsetTenant    string
 	offsetNamespace string
 	offsetTopic     string
-	offsetFullTopic string
 	// startFlag is used to indicate whether offset manager has caught up with the latest offset.
 	startFlag bool
 }
 
 func NewOffsetManager(client pulsar.Client, config *Config, admin *padmin.PulsarAdmin) (OffsetManager, error) {
+	if config.AutoCreateOffsetTopic {
+		err := admin.PersistentTopics.CreatePartitioned(config.PulsarTenant, config.PulsarNamespace, config.OffsetTopic, 1)
+		if err != nil {
+			return nil, err
+		}
+	}
 	consumer, err := getOffsetConsumer(client, config)
 	if err != nil {
 		return nil, err
@@ -49,7 +54,6 @@ func NewOffsetManager(client pulsar.Client, config *Config, admin *padmin.Pulsar
 		offsetTenant:    config.PulsarTenant,
 		offsetNamespace: config.PulsarNamespace,
 		offsetTopic:     config.OffsetTopic,
-		offsetFullTopic: getOffsetTopic(config),
 		offsetMap:       make(map[string]MessageIdPair),
 	}
 	return &impl, nil
