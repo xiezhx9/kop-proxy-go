@@ -376,10 +376,8 @@ github.com/prometheus/procfs v0.1.3/go.mod h1:lV6e/gmhEcM9IjHGsFOCxxuZ+z1YqCvr4O
 github.com/prometheus/procfs v0.6.0/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1xBZuNvfVA=
 github.com/prometheus/procfs v0.7.3 h1:4jVXhlkAyzOScmCkXBTOLRLTz8EeU+eyjrwB/EPq0VU=
 github.com/prometheus/procfs v0.7.3/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1xBZuNvfVA=
-github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230305080815-15939ccc1c25 h1:WM1VsqK7ZzANMJfhgoV5mquMnkBLZMHyEQv2VDXfIh4=
-github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230305080815-15939ccc1c25/go.mod h1:f0dNgdubudV+JFMz9zE6jwODcpUnyib2KPngeuRP0PI=
-github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230307115521-31a0d51d09b4 h1:wn9XtYKw/opwk24e8VmVwhQi2VWYHS37jOZgr+/P6B0=
-github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230307115521-31a0d51d09b4/go.mod h1:f0dNgdubudV+JFMz9zE6jwODcpUnyib2KPngeuRP0PI=
+github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230403092950-13d385dd3ebd h1:sWB2v2Qz2p1p7MZOxct7eah4cdO0gg6pcjj2PyxXQec=
+github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230403092950-13d385dd3ebd/go.mod h1:VS6v0OJDAw7t+owuRfsMbmXUm6cRQN6R0b8QAIHGZJI=
 github.com/protocol-laboratory/pulsar-admin-go v0.0.0-20230307111555-33b695a0a108 h1:t041eo2X9sWbIQs81axnG/f/Ktbbv4bBWeBBq9etewA=
 github.com/protocol-laboratory/pulsar-admin-go v0.0.0-20230307111555-33b695a0a108/go.mod h1:Sb8ZWg2tXt84pPPZpD2P2ULBrnmgZWIhNrxaa25EVI8=
 github.com/protocol-laboratory/pulsar-codec-go v0.0.0-20221012004921-e001bc05e13a h1:5iEichySI6tdU49aS9eXkPkEzcsYlx7sZOa4Vd/gzLk=
@@ -424,8 +422,8 @@ github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
-github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
-github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
+github.com/stretchr/testify v1.8.2 h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ8=
+github.com/stretchr/testify v1.8.2/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/testcontainers/testcontainers-go v0.18.0 h1:8RXrcIQv5xX/uBOSmZd297gzvA7F0yuRA37/918o7Yg=
@@ -637,8 +635,8 @@ golang.org/x/sys v0.0.0-20211116061358-0a5406a5449c/go.mod h1:oPkhp1MJrh7nUepCBc
 golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20220204135822-1c1b9b1eba6a/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
-golang.org/x/sys v0.5.0 h1:MUK/U/4lj1t1oPg0HfuXDN/Z1wv31ZJ/YcPiGccS4DU=
-golang.org/x/sys v0.5.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.6.0 h1:MVltZSvRTcU2ljQOhs94SXPftV6DCNnZViHeQps87pQ=
+golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
 golang.org/x/term v0.0.0-20210927222741-03fcf44c2211/go.mod h1:jbD1KX2456YbFQfuXm/mYQcufACuNUgVhRMnK/tPxf8=
 golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 h1:CBpWXWQpIRjzmkkA+M7q9Fqnwd2mZr3AFqexg8YTfoM=
