@@ -347,6 +347,12 @@ func (g *GroupCoordinatorStandalone) GetGroup(username, groupId string) (*Group,
 	return group, nil
 }
 
+func (g *GroupCoordinatorStandalone) DelGroup(username, groupId string) {
+	g.mutex.Lock()
+	delete(g.groupManager, username+groupId)
+	g.mutex.Unlock()
+}
+
 func (g *GroupCoordinatorStandalone) addMemberAndRebalance(group *Group, clientId, memberId, protocolType string, protocols []*codec.GroupProtocol, rebalanceDelayMs int) (string, error) {
 	if memberId == EmptyMemberId {
 		memberId = clientId + "-" + uuid.New().String()

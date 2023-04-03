@@ -26,9 +26,14 @@ func (gcc *GroupCoordinatorCluster) HandleLeaveGroup(username, groupId string,
 	panic("implement handle leave group")
 }
 
+func (gcc *GroupCoordinatorCluster) HandleHeartBeat(username, groupId, memberId string) *codec.HeartbeatResp {
+	panic("implement handle heart beat")
+}
+
 func (gcc *GroupCoordinatorCluster) GetGroup(username, groupId string) (*Group, error) {
 	panic("implement get group")
 }
-func (gcc *GroupCoordinatorCluster) HandleHeartBeat(username, groupId, memberId string) *codec.HeartbeatResp {
-	panic("implement handle heart beat")
+
+func (gcc *GroupCoordinatorCluster) DelGroup(username, groupId string) {
+	panic("implement get group")
 }

@@ -14,4 +14,6 @@ type GroupCoordinator interface {
 	HandleHeartBeat(username, groupId, memberId string) *codec.HeartbeatResp
 
 	GetGroup(username, groupId string) (*Group, error)
+
+	DelGroup(username, groupId string)
 }
