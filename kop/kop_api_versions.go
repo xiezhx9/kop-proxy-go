@@ -6,7 +6,7 @@ import (
 )
 
 func (b *Broker) ReactApiVersion(apiRequest *codec.ApiReq) (*codec.ApiResp, error) {
-	logrus.Debug("api request ", apiRequest)
+	logrus.Debugf("api request: %+v", apiRequest)
 	resp := codec.ApiResp{
 		BaseResp: codec.BaseResp{
 			CorrelationId: apiRequest.CorrelationId,
