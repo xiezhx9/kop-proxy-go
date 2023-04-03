@@ -75,7 +75,7 @@ func getTenantNamespaceTopicFromPartitionedTopic(partitionedTopic string) (tenan
 func readNextMsg(operation pulsar.ReaderOptions, maxWaitMs int, pulsarClient pulsar.Client) (pulsar.Message, error) {
 	reader, err := pulsarClient.CreateReader(operation)
 	if err != nil {
-		logrus.Warnf("create pulsar lasted read failed. topic: %s, err: %s", operation.Topic, err)
+		logrus.Warnf("create pulsar latest read failed. topic: %s, err: %s", operation.Topic, err)
 		return nil, err
 	}
 	defer reader.Close()

@@ -3,13 +3,13 @@ module github.com/protocol-laboratory/kop-proxy-go
 go 1.18
 
 require (
-	github.com/apache/pulsar-client-go v0.9.0
+	github.com/apache/pulsar-client-go v0.10.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/google/uuid v1.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230403092950-13d385dd3ebd
 	github.com/protocol-laboratory/pulsar-admin-go v0.0.0-20230307111555-33b695a0a108
-	github.com/protocol-laboratory/pulsar-codec-go v0.0.0-20221012004921-e001bc05e13a
+	github.com/protocol-laboratory/pulsar-codec-go v0.0.0-20230316133629-dcbd34f20ab7
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.2
 )
@@ -23,6 +23,7 @@ require (
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/ardielle/ardielle-go v1.5.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/bits-and-blooms/bitset v1.4.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/containerd/containerd v1.6.17 // indirect
@@ -59,6 +60,7 @@ require (
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/testcontainers/testcontainers-go v0.17.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
+	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/net v0.0.0-20220906165146-f3363e06e74c // indirect
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f // indirect
 	golang.org/x/sys v0.6.0 // indirect
