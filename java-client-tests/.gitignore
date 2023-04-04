@@ -1,0 +1,17 @@
+# file system
+.DS_Store
+
+# Project exclude paths
+**.log
+**/target
+**/.classpath
+**/.project
+**/.factorypath
+
+# IDE
+.idea/**
+**.iml
+.vscode/**
+
+# mvn shade plugin
+dependency-reduced-pom.xml

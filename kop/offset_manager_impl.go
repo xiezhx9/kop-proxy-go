@@ -12,6 +12,7 @@ import (
 	"github.com/protocol-laboratory/pulsar-admin-go/padmin"
 	"github.com/sirupsen/logrus"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -34,7 +35,9 @@ func NewOffsetManager(client pulsar.Client, config *Config, admin *padmin.Pulsar
 	if config.AutoCreateOffsetTopic {
 		err := admin.PersistentTopics.CreatePartitioned(config.PulsarTenant, config.PulsarNamespace, config.OffsetTopic, 1)
 		if err != nil {
-			return nil, err
+			if !strings.Contains(err.Error(), "already exists") {
+				return nil, err
+			}
 		}
 	}
 	consumer, err := getOffsetConsumer(client, config)
