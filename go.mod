@@ -8,7 +8,7 @@ require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/google/uuid v1.3.0
 	github.com/pkg/errors v0.9.1
-	github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230405063630-1b3e08e33a2c
+	github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230405075518-7e22434277c8
 	github.com/protocol-laboratory/pulsar-admin-go v0.0.0-20230307111555-33b695a0a108
 	github.com/protocol-laboratory/pulsar-codec-go v0.0.0-20230316133629-dcbd34f20ab7
 	github.com/sirupsen/logrus v1.9.0
