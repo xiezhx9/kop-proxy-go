@@ -5,6 +5,27 @@ import (
 	"github.com/protocol-laboratory/kafka-codec-go/codec"
 )
 
+type GroupForRedis struct {
+	GroupStatus       GroupStatus                `json:"GroupStatus,omitempty"`
+	MemberIds         map[string]*MemberForRedis `json:"MemberIds,omitempty"`
+	CanRebalance      bool                       `json:"CanRebalance,omitempty"`
+	GenerationId      int                        `json:"GenerationId,omitempty"`
+	Leader            string                     `json:"Leader,omitempty"`
+	SupportedProtocol string                     `json:"SupportedProtocol,omitempty"`
+	ProtocolType      string                     `json:"ProtocolType,omitempty"`
+}
+
+type MemberForRedis struct {
+	ClientId         string            `json:"ClientId,omitempty"`
+	MemberId         string            `json:"MemberId,omitempty"`
+	JoinGenerationId int               `json:"JoinGenerationId,omitempty"`
+	SyncGenerationId int               `json:"SyncGenerationId,omitempty"`
+	Metadata         []byte            `json:"Metadata,omitempty"`
+	Assignment       []byte            `json:"Assignment,omitempty"`
+	ProtocolType     string            `json:"ProtocolType,omitempty"`
+	Protocols        map[string][]byte `json:"Protocols,omitempty"`
+}
+
 type GroupCoordinatorCluster struct {
 	groupManager map[string]*Group
 	redisdb      redis.Cmdable

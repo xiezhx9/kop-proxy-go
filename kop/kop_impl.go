@@ -395,6 +395,9 @@ OUT:
 			Offset:    offset,
 		})
 		consumerMetadata.mutex.Unlock()
+		if byteLength > minBytes && time.Since(start).Milliseconds() >= int64(b.config.MinFetchWaitMs) {
+			break
+		}
 		if byteLength > maxBytes {
 			break
 		}
@@ -551,7 +554,7 @@ func (b *Broker) OffsetListPartitionAction(addr net.Addr, topic, clientID string
 				}, nil
 			}
 		}
-		logrus.Errorf("get pulsar client failed. err: %v", err)
+		logrus.Errorf("pulsar client not exists. partitionedTopic: %s", partitionedTopic)
 		return &codec.ListOffsetsPartitionResp{
 			PartitionId: req.PartitionId,
 			ErrorCode:   codec.UNKNOWN_SERVER_ERROR,
@@ -708,10 +711,12 @@ func (b *Broker) createConsumer(partitionedTopic string, subscriptionName string
 		logrus.Warningf("subscribe consumer failed. topic: %s, err: %s", partitionedTopic, err)
 		return nil, nil, err
 	}
-	err = consumer.Seek(messageId)
-	if err != nil {
-		consumer.Close()
-		logrus.Warningf("seek message failed. topic: %s, err: %s", partitionedTopic, err)
+	if messageId != pulsar.EarliestMessageID() {
+		err = consumer.Seek(messageId)
+		if err != nil {
+			consumer.Close()
+			logrus.Warningf("seek message failed. topic: %s, err: %s", partitionedTopic, err)
+		}
 	}
 	return channel, consumer, nil
 }

@@ -54,11 +54,11 @@ const (
 	Empty
 )
 
-type GroupCoordinatorType int
+type GroupCoordinatorType string
 
 const (
-	Standalone GroupCoordinatorType = 0 + iota
-	Cluster
+	Standalone GroupCoordinatorType = "standalone"
+	Cluster    GroupCoordinatorType = "cluster"
 )
 
 const (
