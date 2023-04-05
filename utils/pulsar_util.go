@@ -10,6 +10,8 @@ import (
 	"github.com/protocol-laboratory/pulsar-admin-go/padmin"
 	"github.com/protocol-laboratory/pulsar-codec-go/pb"
 	"github.com/sirupsen/logrus"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -32,7 +34,7 @@ func ReadLatestMsg(partitionedTopic string, maxWaitMs int, messageId *padmin.Mes
 	var msgId pulsar.MessageID
 	bytes, err := generateMsgBytes(messageId)
 	if err != nil {
-		logrus.Errorf("genrate msg bytes failed. topic: %s, err: %s", partitionedTopic, err)
+		logrus.Errorf("generate msg bytes failed. topic: %s, err: %s", partitionedTopic, err)
 		return nil, err
 	}
 	msgId, err = pulsar.DeserializeMessageID(bytes)
@@ -55,6 +57,35 @@ func GetLatestMsgId(partitionedTopic string, client *padmin.PulsarAdmin) (*padmi
 		return nil, err
 	}
 	return client.PersistentTopics.GetLastMessageId(tenant, namespace, topic)
+}
+
+var fullTopicMatch = regexp.MustCompile(`^(persistent|non-persistent)://(.*?)/(.*?)/(.*?)-partition-(\\d+)`)
+
+type PartitionedTopicInfo struct {
+	Tenant    string
+	Namespace string
+	Topic     string
+	Partition int
+}
+
+func GetTenantNamespaceTopicFromPartitionedPrefix(str string) (info PartitionedTopicInfo, err error) {
+	res := fullTopicMatch.FindAllStringSubmatch(str, -1)
+	if len(res) != -1 {
+		return info, fmt.Errorf("get tenant and namespace failed, topic: %s", str)
+	}
+	if len(res[0]) != 5 {
+		return info, fmt.Errorf("get tenant and namespace failed, topic: %s", str)
+	}
+	i64, err := strconv.ParseInt(res[0][4], 10, 64)
+	if err != nil {
+		return info, fmt.Errorf("partition is not int, topic: %s", str)
+	}
+	return PartitionedTopicInfo{
+		Tenant:    res[0][1],
+		Namespace: res[0][2],
+		Topic:     res[0][3],
+		Partition: int(i64),
+	}, nil
 }
 
 func getTenantNamespaceTopicFromPartitionedTopic(partitionedTopic string) (tenant, namespace, shortPartitionedTopic string, err error) {

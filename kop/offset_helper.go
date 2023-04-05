@@ -10,7 +10,7 @@ func convOffset(message pulsar.Message, continuousOffset bool) int64 {
 	if continuousOffset {
 		index := message.Index()
 		if index == nil {
-			panic(any("continuous offset mode, index field must be set"))
+			panic("continuous offset mode, index field must be set")
 		}
 		return int64(*index) + 1
 	}

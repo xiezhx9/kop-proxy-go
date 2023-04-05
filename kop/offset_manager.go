@@ -13,6 +13,10 @@ type OffsetManager interface {
 
 	RemoveOffsetWithKey(key string)
 
+	GracefulSendOffsetMessages(map[string]*ConsumerMetadata) error
+
+	GracefulSendOffsetMessage(string, *ConsumerMetadata) error
+
 	GetOffsetMap() map[string]MessageIdPair
 
 	Close()

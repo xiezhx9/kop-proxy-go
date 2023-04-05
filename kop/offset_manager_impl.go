@@ -213,6 +213,93 @@ func (o *OffsetManagerImpl) RemoveOffsetWithKey(key string) {
 	logrus.Infof("remove offset success. key: %s, offset: %d", key, value.Offset)
 }
 
+func (o *OffsetManagerImpl) GracefulSendOffsetMessages(metadataMap map[string]*ConsumerMetadata) error {
+	logrus.Infof("begin graceful send offset messages")
+	if len(o.offsetMap) == 0 {
+		logrus.Infof("offset map is empty")
+		return nil
+	}
+
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+
+	for key, metadata := range metadataMap {
+		topicInfo, err := utils.GetTenantNamespaceTopicFromPartitionedPrefix(key)
+		if err != nil {
+			logrus.Errorf("get topic info failed. key: %s, err: %s", key, err)
+			continue
+		}
+
+		offsetKey := o.GenerateKey(metadata.username, topicInfo.Topic, metadata.groupId, topicInfo.Partition)
+
+		message, ok := o.offsetMap[offsetKey]
+		if !ok {
+			logrus.Infof("offset is not exist. key: %s", offsetKey)
+			continue
+		}
+
+		err = o.gracefulSendOffsetMessage(topicInfo, key, message)
+		if err != nil {
+			logrus.Errorf("graceful send offset message failed. key: %s, err: %s", key, err)
+			continue
+		}
+	}
+
+	return nil
+}
+
+func (o *OffsetManagerImpl) GracefulSendOffsetMessage(key string, metadata *ConsumerMetadata) error {
+	if len(o.offsetMap) == 0 {
+		logrus.Infof("offset map is empty")
+		return nil
+	}
+
+	topicInfo, err := utils.GetTenantNamespaceTopicFromPartitionedPrefix(key)
+	if err != nil {
+		logrus.Errorf("get topic info failed. key: %s, err: %s", key, err)
+		return err
+	}
+
+	offsetKey := o.GenerateKey(metadata.username, topicInfo.Topic, metadata.groupId, topicInfo.Partition)
+
+	o.mutex.Lock()
+	message, ok := o.offsetMap[offsetKey]
+	o.mutex.Unlock()
+
+	if !ok {
+		logrus.Infof("offset is not exist. key: %s", offsetKey)
+		return nil
+	}
+
+	return o.gracefulSendOffsetMessage(topicInfo, key, message)
+}
+
+func (o *OffsetManagerImpl) gracefulSendOffsetMessage(info utils.PartitionedTopicInfo, key string, pair MessageIdPair) error {
+	logrus.Infof("begin graceful send offset message. key: %s, topic %s, partition: %d, offset: %d, message id: %s",
+		key, info.Topic, info.Partition, pair.Offset, pair.MessageId)
+	data := model.MessageIdData{}
+	data.MessageId = pair.MessageId.Serialize()
+	data.Offset = pair.Offset
+	marshal, err := json.Marshal(data)
+	if err != nil {
+		logrus.Errorf("convert msg to bytes failed. key: %s, topic: %s partition %d, offset: %d, message id: %s, err: %s",
+			key, info.Topic, info.Partition, pair.Offset, pair.MessageId, err)
+		return err
+	}
+	message := pulsar.ProducerMessage{}
+	message.Payload = marshal
+	message.Key = key
+	_, err = o.producer.Send(context.TODO(), &message)
+	if err != nil {
+		logrus.Errorf("commit offset failed. key: %s, topic: %s partition %d, offset: %d, message id: %s, err: %s",
+			key, info.Topic, info.Partition, pair.Offset, pair.MessageId, err)
+		return err
+	}
+	logrus.Infof("key: %s, topic: %s partition %d, offset: %d, message id: %s commit success",
+		key, info.Topic, info.Partition, pair.Offset, pair.MessageId)
+	return nil
+}
+
 func (o *OffsetManagerImpl) GetOffsetMap() map[string]MessageIdPair {
 	return o.offsetMap
 }

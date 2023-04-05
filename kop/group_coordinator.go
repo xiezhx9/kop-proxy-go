@@ -36,6 +36,7 @@ type memberMetadata struct {
 }
 
 type ConsumerMetadata struct {
+	username   string
 	groupId    string
 	channel    chan pulsar.ConsumerMessage
 	consumer   pulsar.Consumer
