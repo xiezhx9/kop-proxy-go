@@ -1,14 +1,32 @@
 package kop
 
 import (
+	"github.com/go-redis/redis/v8"
 	"github.com/protocol-laboratory/kafka-codec-go/codec"
 )
 
 type GroupCoordinatorCluster struct {
+	groupManager map[string]*Group
+	redisdb      redis.Cmdable
 }
 
-func NewGroupCoordinatorCluster() *GroupCoordinatorCluster {
-	return &GroupCoordinatorCluster{}
+func NewGroupCoordinatorCluster(redisConfig RedisConfig) *GroupCoordinatorCluster {
+	g := &GroupCoordinatorCluster{}
+	g.groupManager = make(map[string]*Group)
+	var redisdb redis.Cmdable
+	if redisConfig.RedisType == RedisCluster {
+		redisdb = redis.NewClusterClient(&redis.ClusterOptions{
+			Addrs:    redisConfig.Addr,
+			Password: redisConfig.Password,
+		})
+	} else {
+		redisdb = redis.NewClient(&redis.Options{
+			Addr:     redisConfig.Addr[0],
+			Password: redisConfig.Password,
+		})
+	}
+	g.redisdb = redisdb
+	return g
 }
 
 func (gcc *GroupCoordinatorCluster) HandleJoinGroup(username, groupId, memberId, clientId, protocolType string, sessionTimeoutMs int,

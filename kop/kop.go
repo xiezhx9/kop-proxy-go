@@ -15,6 +15,7 @@ import (
 type Config struct {
 	PulsarConfig PulsarConfig
 	NetConfig    knet.KafkaNetServerConfig
+	RedisConfig  RedisConfig
 
 	ClusterId                string
 	NodeId                   int32
@@ -184,7 +185,7 @@ func NewKop(impl Server, config *Config) (*Broker, error) {
 		}
 	}
 	if config.GroupCoordinatorType == Cluster {
-		broker.groupCoordinator = NewGroupCoordinatorCluster()
+		broker.groupCoordinator = NewGroupCoordinatorCluster(config.RedisConfig)
 	} else if config.GroupCoordinatorType == Standalone {
 		broker.groupCoordinator = NewGroupCoordinatorStandalone(config, broker.pClient)
 	} else {
