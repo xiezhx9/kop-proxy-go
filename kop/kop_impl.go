@@ -368,7 +368,7 @@ OUT:
 			if ctx.Err() != nil {
 				break OUT
 			}
-			logrus.Errorf("read msg failed. err: %s", err)
+			logrus.Errorf("partitionedTopic %s read msg failed. err: %s", partitionedTopic, err)
 			continue
 		}
 		err = consumerMetadata.consumer.Ack(message)

@@ -54,6 +54,20 @@ type PulsarConfig struct {
 	TcpPort  int
 }
 
+type RedisType string
+
+const (
+	RedisStandalone RedisType = "standalone"
+	RedisCluster    RedisType = "cluster"
+)
+
+type RedisConfig struct {
+	Addr      []string
+	Password  string
+	DB        int
+	RedisType RedisType
+}
+
 type Server interface {
 	Auth(username string, password string, clientId string) (bool, error)
 

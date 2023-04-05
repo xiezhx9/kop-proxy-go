@@ -44,8 +44,9 @@ func main() {
 	}
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
-	for {
-		<-interrupt
+	for range interrupt {
+		impl.Close()
+		return
 	}
 }
 
