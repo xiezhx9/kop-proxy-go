@@ -8,6 +8,7 @@ import (
 	"github.com/protocol-laboratory/kafka-codec-go/codec"
 	"github.com/protocol-laboratory/kafka-codec-go/knet"
 	"github.com/protocol-laboratory/kop-proxy-go/constant"
+	"github.com/protocol-laboratory/kop-proxy-go/metrics"
 	"github.com/protocol-laboratory/kop-proxy-go/utils"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -845,14 +846,10 @@ func (b *Broker) OffsetLeaderEpochAction(addr net.Addr, topic string, req *codec
 	}, nil
 }
 
-func (b *Broker) getProducer(addr net.Addr, username string, topic string) (pulsar.Producer, error) {
-	pulsarTopic, err := b.server.PulsarTopic(username, topic)
-	if err != nil {
-		logrus.Errorf("get pulsar topic failed. username: %s, topic: %s", username, topic)
-		return nil, err
-	}
+func (b *Broker) getProducer(addr net.Addr, username string, pulsarTopic string) (pulsar.Producer, error) {
 	b.mutex.Lock()
 	producer, exist := b.producerManager[addr.String()]
+	var err error
 	if !exist {
 		options := pulsar.ProducerOptions{}
 		options.Topic = pulsarTopic
@@ -884,7 +881,12 @@ func (b *Broker) ProduceAction(addr net.Addr, topic string, partition int, req *
 			PartitionId:     req.PartitionId,
 		}, nil
 	}
-	producer, err := b.getProducer(addr, user.username, topic)
+	pulsarTopic, err := b.server.PulsarTopic(user.username, topic)
+	if err != nil {
+		logrus.Errorf("get pulsar topic failed. username: %s, topic: %s", user.username, topic)
+		return nil, err
+	}
+	producer, err := b.getProducer(addr, user.username, pulsarTopic)
 	if err != nil {
 		logrus.Errorf("create producer failed. username: %s, kafkaTopic: %s", user.username, topic)
 		return &codec.ProducePartitionResp{
@@ -903,11 +905,17 @@ func (b *Broker) ProduceAction(addr net.Addr, topic string, partition int, req *
 		if kafkaMsg.Key != nil {
 			message.Key = string(kafkaMsg.Key)
 		}
+		startTime := time.Now()
 		producer.SendAsync(context.Background(), &message, func(id pulsar.MessageID, message *pulsar.ProducerMessage, err error) {
 			atomic.AddInt32(&count, 1)
 			if err != nil {
+				metrics.PulsarSendFailCount.WithLabelValues(topic, pulsarTopic).Inc()
 				logrus.Errorf("send msg failed. username: %s, kafkaTopic: %s, err: %s", user.username, topic, err)
+			} else {
+				metrics.PulsarSendSuccessCount.WithLabelValues(topic, pulsarTopic).Inc()
 			}
+			metrics.PulsarSendLatency.WithLabelValues(topic, pulsarTopic).Observe(
+				float64(time.Since(startTime).Milliseconds()))
 			if count == int32(len(batch)) {
 				offset = ConvertMsgId(id)
 				producerChan <- true
