@@ -70,7 +70,7 @@ type PartitionedTopicInfo struct {
 
 func GetTenantNamespaceTopicFromPartitionedPrefix(str string) (info PartitionedTopicInfo, err error) {
 	res := fullTopicMatch.FindAllStringSubmatch(str, -1)
-	if len(res) != -1 {
+	if len(res) != 1 {
 		return info, fmt.Errorf("get tenant and namespace failed, topic: %s", str)
 	}
 	if len(res[0]) != 5 {
