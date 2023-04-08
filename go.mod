@@ -14,6 +14,7 @@ require (
 	github.com/protocol-laboratory/pulsar-codec-go v0.0.0-20230316133629-dcbd34f20ab7
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.2
+	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8
 )
 
 require (

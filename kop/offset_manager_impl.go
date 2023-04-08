@@ -18,15 +18,16 @@ import (
 )
 
 type OffsetManagerImpl struct {
-	client          pulsar.Client
-	admin           *padmin.PulsarAdmin
-	producer        pulsar.Producer
-	consumer        pulsar.Consumer
-	offsetMap       map[string]MessageIdPair
-	mutex           sync.RWMutex
-	offsetTenant    string
-	offsetNamespace string
-	offsetTopic     string
+	client            pulsar.Client
+	admin             *padmin.PulsarAdmin
+	producer          pulsar.Producer
+	consumer          pulsar.Consumer
+	offsetMap         map[string]MessageIdPair
+	offsetRateLimiter *utils.KeyBasedRateLimiter
+	mutex             sync.RWMutex
+	offsetTenant      string
+	offsetNamespace   string
+	offsetTopic       string
 	// startFlag is used to indicate whether offset manager has caught up with the latest offset.
 	startFlag bool
 }
@@ -59,6 +60,9 @@ func NewOffsetManager(client pulsar.Client, config *Config, admin *padmin.Pulsar
 		offsetTopic:     config.OffsetTopic,
 		offsetMap:       make(map[string]MessageIdPair),
 	}
+	if config.OffsetPersistentFrequency != 0 {
+		impl.offsetRateLimiter = utils.NewKeyBasedRateLimiter(config.OffsetPersistentFrequency, 1)
+	}
 	return &impl, nil
 }
 
@@ -70,6 +74,11 @@ func (o *OffsetManagerImpl) Start() chan bool {
 
 func (o *OffsetManagerImpl) startOffsetConsumer(c chan bool) {
 	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				logrus.Errorf("startOffsetConsumer panic. err: %s", err)
+			}
+		}()
 		var msg pulsar.Message
 		for {
 			var err error
@@ -119,7 +128,11 @@ func (o *OffsetManagerImpl) startOffsetConsumer(c chan bool) {
 				Offset:    msgIdData.Offset,
 			}
 			o.mutex.Lock()
-			o.offsetMap[receive.Key()] = pair
+			// If the offset is smaller than the current offset, doesn't update
+			oldPair := o.offsetMap[receive.Key()]
+			if oldPair.Offset < pair.Offset {
+				o.offsetMap[receive.Key()] = pair
+			}
 			o.mutex.Unlock()
 			o.checkTime(msg, publishTime, c)
 		}
@@ -143,23 +156,29 @@ func (o *OffsetManagerImpl) getCurrentLatestMsg() (pulsar.Message, error) {
 
 func (o *OffsetManagerImpl) CommitOffset(username, kafkaTopic, groupId string, partition int, pair MessageIdPair) error {
 	key := o.GenerateKey(username, kafkaTopic, groupId, partition)
-	data := model.MessageIdData{}
-	data.MessageId = pair.MessageId.Serialize()
-	data.Offset = pair.Offset
-	marshal, err := json.Marshal(data)
-	if err != nil {
-		logrus.Errorf("convert msg to bytes failed. kafkaTopic: %s, err: %s", kafkaTopic, err)
-		return err
+	o.mutex.Lock()
+	o.offsetMap[key] = pair
+	o.mutex.Unlock()
+
+	if o.offsetRateLimiter != nil && o.offsetRateLimiter.Acquire(key) {
+		data := model.MessageIdData{}
+		data.MessageId = pair.MessageId.Serialize()
+		data.Offset = pair.Offset
+		marshal, err := json.Marshal(data)
+		if err != nil {
+			logrus.Errorf("convert msg to bytes failed. kafkaTopic: %s, err: %s", kafkaTopic, err)
+			return err
+		}
+		message := pulsar.ProducerMessage{}
+		message.Payload = marshal
+		message.Key = key
+		_, err = o.producer.Send(context.TODO(), &message)
+		if err != nil {
+			logrus.Errorf("commit offset failed. kafkaTopic: %s, offset: %d, err: %s", kafkaTopic, pair.Offset, err)
+			return err
+		}
+		logrus.Infof("kafkaTopic: %s commit offset %d success", kafkaTopic, pair.Offset)
 	}
-	message := pulsar.ProducerMessage{}
-	message.Payload = marshal
-	message.Key = key
-	_, err = o.producer.Send(context.TODO(), &message)
-	if err != nil {
-		logrus.Errorf("commit offset failed. kafkaTopic: %s, offset: %d, err: %s", kafkaTopic, pair.Offset, err)
-		return err
-	}
-	logrus.Infof("kafkaTopic: %s commit offset %d success", kafkaTopic, pair.Offset)
 	return nil
 }
 

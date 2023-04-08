@@ -39,6 +39,9 @@ type Config struct {
 	PulsarNamespace string
 	// OffsetTopic use to store kafka offset
 	OffsetTopic string
+	// OffsetPersistentFrequency specifies the frequency at which committed offsets should be persistent
+	// per topic per consumer group per partition, in seconds. 0 means immediately
+	OffsetPersistentFrequency int
 	// AutoCreateOffsetTopic if true, create offset topic automatically
 	AutoCreateOffsetTopic bool
 	// GroupCoordinatorType enum: Standalone, Cluster; default Standalone
