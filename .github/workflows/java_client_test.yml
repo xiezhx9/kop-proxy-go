@@ -15,5 +15,11 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+      - name: build image
+        run: docker build . -t kop-integration-test
+      - name: run kop
+        run: docker run --name kop-integration-test -p 9092:9092 -p 6650:6650 -p 8080:8080 -d kop-integration-test
+      - name: wait kop start
+        run: sleep 60
       - name: run java client test
-        run: cd java-client-tests; mvn -B clean checkstyle:check
+        run: cd java-client-tests; mvn -B clean checkstyle:check test
