@@ -277,8 +277,12 @@ func (b *Broker) FetchAction(addr net.Addr, req *codec.FetchReq) ([]*codec.Fetch
 		f.Topic = topicReq.Topic
 		f.PartitionRespList = make([]*codec.FetchPartitionResp, len(topicReq.PartitionReqList))
 		for j, partitionReq := range topicReq.PartitionReqList {
-			f.PartitionRespList[j] = b.FetchPartition(addr, topicReq.Topic, req.ClientId, partitionReq,
+			var err error
+			f.PartitionRespList[j], err = b.FetchPartition(addr, topicReq.Topic, req.ClientId, partitionReq,
 				req.MaxBytes, req.MinBytes, maxWaitTime/len(topicReq.PartitionReqList))
+			if err != nil {
+				return nil, err
+			}
 		}
 		result[i] = f
 	}
@@ -294,7 +298,7 @@ func (b *Broker) partitionedTopic(user *userInfo, kafkaTopic string, partitionId
 }
 
 // FetchPartition visible for testing
-func (b *Broker) FetchPartition(addr net.Addr, kafkaTopic, clientID string, req *codec.FetchPartitionReq, maxBytes int, minBytes int, maxWaitMs int) *codec.FetchPartitionResp {
+func (b *Broker) FetchPartition(addr net.Addr, kafkaTopic, clientID string, req *codec.FetchPartitionReq, maxBytes int, minBytes int, maxWaitMs int) (*codec.FetchPartitionResp, error) {
 	start := time.Now()
 	b.mutex.RLock()
 	user, exist := b.userInfoManager[addr.String()]
@@ -307,9 +311,8 @@ func (b *Broker) FetchPartition(addr net.Addr, kafkaTopic, clientID string, req 
 			PartitionIndex: req.PartitionId,
 			ErrorCode:      codec.UNKNOWN_SERVER_ERROR,
 			RecordBatch:    &recordBatch,
-		}
+		}, nil
 	}
-	logrus.Infof("%s fetch topic: %s partition %d", addr.String(), kafkaTopic, req.PartitionId)
 	partitionedTopic, err := b.partitionedTopic(user, kafkaTopic, req.PartitionId)
 	if err != nil {
 		logrus.Errorf("fetch partition failed when get pulsar topic %s, kafka topic: %s", addr.String(), kafkaTopic)
@@ -317,12 +320,12 @@ func (b *Broker) FetchPartition(addr net.Addr, kafkaTopic, clientID string, req 
 			PartitionIndex: req.PartitionId,
 			ErrorCode:      codec.UNKNOWN_SERVER_ERROR,
 			RecordBatch:    &recordBatch,
-		}
+		}, nil
 	}
 	b.mutex.RLock()
 	consumerMetadata, exist := b.consumerManager[partitionedTopic+clientID]
 	if !exist {
-		groupId, exist := b.topicGroupManager[partitionedTopic]
+		groupId, exist := b.topicGroupManager[partitionedTopic+clientID]
 		b.mutex.RUnlock()
 		if exist {
 			group, err := b.groupCoordinator.GetGroup(user.username, groupId)
@@ -334,18 +337,12 @@ func (b *Broker) FetchPartition(addr net.Addr, kafkaTopic, clientID string, req 
 					LogStartOffset:   0,
 					RecordBatch:      &recordBatch,
 					PartitionIndex:   req.PartitionId,
-				}
+				}, nil
 			}
 		}
-		// Maybe this partition-topic is already assigned to another member
-		logrus.Warnf("can not find consumer for topic: %s when fetch partition %s", partitionedTopic, partitionedTopic+clientID)
-		return &codec.FetchPartitionResp{
-			LastStableOffset: 0,
-			ErrorCode:        codec.NONE,
-			LogStartOffset:   0,
-			RecordBatch:      &recordBatch,
-			PartitionIndex:   req.PartitionId,
-		}
+		b.groupCoordinator.DelGroup(user.username, groupId)
+		logrus.Errorf("can not find consumer for topic: %s when fetch partition %s, client: %s", partitionedTopic, partitionedTopic, clientID)
+		return nil, fmt.Errorf("can not find consumer for topic: %s", partitionedTopic)
 	}
 	b.mutex.RUnlock()
 	byteLength := 0
@@ -369,16 +366,15 @@ OUT:
 			if ctx.Err() != nil {
 				break OUT
 			}
-			logrus.Errorf("partitionedTopic %s read msg failed. err: %s", partitionedTopic, err)
+			logrus.Errorf("partitionedTopic %s read msg failed: %s", partitionedTopic, err)
 			continue
 		}
 		err = consumerMetadata.consumer.Ack(message)
 		if err != nil {
-			logrus.Errorf("ack msg failed. topic: %s err: %s", kafkaTopic, err)
+			logrus.Errorf("ack topic: %s message failed: %s", kafkaTopic, err)
 		}
 		consumerMetadata.mutex.Unlock()
 		byteLength = byteLength + utils.CalculateMsgLength(message)
-		logrus.Infof("receive msg: %s from %s", message.ID(), message.Topic())
 		offset := convOffset(message, b.config.ContinuousOffset)
 		if fistMessage {
 			fistMessage = false
@@ -410,7 +406,7 @@ OUT:
 		LastStableOffset: 0,
 		LogStartOffset:   0,
 		RecordBatch:      &recordBatch,
-	}
+	}, nil
 }
 
 func (b *Broker) GroupJoinAction(addr net.Addr, req *codec.JoinGroupReq) (*codec.JoinGroupResp, error) {
@@ -481,6 +477,9 @@ func (b *Broker) GroupLeaveAction(addr net.Addr, req *codec.LeaveGroupReq) (*cod
 			consumerMetadata.consumer.Close()
 			consumerMetadata.mutex.Unlock()
 			logrus.Infof("success close consumer topic: %s", group.partitionedTopic)
+			if err := b.offsetManager.GracefulSendOffsetMessage(topic, consumerMetadata); err != nil {
+				logrus.Errorf("graceful send offset message failed: %v", err)
+			}
 			delete(b.consumerManager, topic+req.ClientId)
 			consumerMetadata = nil
 		}
@@ -490,7 +489,7 @@ func (b *Broker) GroupLeaveAction(addr net.Addr, req *codec.LeaveGroupReq) (*cod
 			delete(b.pulsarClientManage, topic+req.ClientId)
 			client = nil
 		}
-		delete(b.topicGroupManager, topic)
+		delete(b.topicGroupManager, topic+req.ClientId)
 		b.mutex.Unlock()
 	}
 	return leaveGroupResp, nil
@@ -542,7 +541,7 @@ func (b *Broker) OffsetListPartitionAction(addr net.Addr, topic, clientID string
 	b.mutex.RLock()
 	client, exist := b.pulsarClientManage[partitionedTopic+clientID]
 	if !exist {
-		groupId, exist := b.topicGroupManager[partitionedTopic]
+		groupId, exist := b.topicGroupManager[partitionedTopic+clientID]
 		b.mutex.RUnlock()
 		if exist {
 			group, err := b.groupCoordinator.GetGroup(user.username, groupId)
@@ -623,7 +622,7 @@ func (b *Broker) OffsetCommitPartitionAction(addr net.Addr, topic, clientID stri
 	}
 	partitionedTopic, err := b.partitionedTopic(user, topic, req.PartitionId)
 	if err != nil {
-		logrus.Errorf("offset commit failed when get pulsar topic %s, kafka topic: %s", addr.String(), topic)
+		logrus.Errorf("offset commit failed when get pulsar topic %s, kafka topic: %s, err: %v", addr.String(), topic, err)
 		return &codec.OffsetCommitPartitionResp{
 			PartitionId: req.PartitionId,
 			ErrorCode:   codec.UNKNOWN_SERVER_ERROR,
@@ -632,7 +631,7 @@ func (b *Broker) OffsetCommitPartitionAction(addr net.Addr, topic, clientID stri
 	b.mutex.RLock()
 	consumerMessages, exist := b.consumerManager[partitionedTopic+clientID]
 	if !exist {
-		groupId, exist := b.topicGroupManager[partitionedTopic]
+		groupId, exist := b.topicGroupManager[partitionedTopic+clientID]
 		b.mutex.RUnlock()
 		if exist {
 			group, err := b.groupCoordinator.GetGroup(user.username, groupId)
@@ -641,8 +640,8 @@ func (b *Broker) OffsetCommitPartitionAction(addr net.Addr, topic, clientID stri
 				return &codec.OffsetCommitPartitionResp{ErrorCode: codec.REBALANCE_IN_PROGRESS}, nil
 			}
 		}
-		logrus.Warnf("commit offset failed, topic: %s, does not exist", partitionedTopic)
-		return &codec.OffsetCommitPartitionResp{ErrorCode: codec.REBALANCE_IN_PROGRESS}, nil
+		logrus.Errorf("commit offset failed, topic: %s, does not exist", partitionedTopic)
+		return &codec.OffsetCommitPartitionResp{ErrorCode: codec.UNKNOWN_TOPIC_ID}, nil
 	}
 	b.mutex.RUnlock()
 	consumerMessages.mutex.RLock()
@@ -666,7 +665,7 @@ func (b *Broker) OffsetCommitPartitionAction(addr net.Addr, topic, clientID stri
 					ErrorCode:   codec.UNKNOWN_SERVER_ERROR,
 				}, nil
 			}
-			logrus.Infof("ack pulsar %s for %s", partitionedTopic, messageIdPair.MessageId)
+			logrus.Infof("ack topic %s, messageID: %s, offset: %d", partitionedTopic, messageIdPair.MessageId, messageIdPair.Offset)
 			consumerMessages.mutex.Lock()
 			consumerMessages.messageIds.Remove(front)
 			consumerMessages.mutex.Unlock()
@@ -692,7 +691,7 @@ func (b *Broker) createConsumer(partitionedTopic string, subscriptionName string
 		pulsarUrl := fmt.Sprintf("pulsar://%s:%d", b.config.PulsarConfig.Host, b.config.PulsarConfig.TcpPort)
 		client, err = pulsar.NewClient(pulsar.ClientOptions{URL: pulsarUrl})
 		if err != nil {
-			logrus.Errorf("create pulsar client failed.")
+			logrus.Errorf("create pulsar client failed: %v", err)
 			return nil, nil, err
 		}
 		b.pulsarClientManage[partitionedTopic+clientId] = client
@@ -709,16 +708,18 @@ func (b *Broker) createConsumer(partitionedTopic string, subscriptionName string
 	}
 	consumer, err := client.Subscribe(options)
 	if err != nil {
-		logrus.Warningf("subscribe consumer failed. topic: %s, err: %s", partitionedTopic, err)
+		logrus.Warningf("subscribe consumer failed, topic: %s, err: %s", partitionedTopic, err)
 		return nil, nil, err
 	}
 	if messageId != pulsar.EarliestMessageID() {
 		err = consumer.Seek(messageId)
 		if err != nil {
+			logrus.Warningf("seek message failed, topic: %s, err: %s", partitionedTopic, err)
 			consumer.Close()
-			logrus.Warningf("seek message failed. topic: %s, err: %s", partitionedTopic, err)
+			return nil, nil, err
 		}
 	}
+	logrus.Infof("create consumer success, topic: %s, subscription name: %s", partitionedTopic, subscriptionName)
 	return channel, consumer, nil
 }
 
@@ -741,7 +742,6 @@ func (b *Broker) OffsetFetchAction(addr net.Addr, topic, clientID, groupID strin
 			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
 		}, nil
 	}
-	logrus.Infof("%s fetch topic: %s offset, partition: %d", addr.String(), topic, req.PartitionId)
 	partitionedTopic, err := b.partitionedTopic(user, topic, req.PartitionId)
 	if err != nil {
 		logrus.Errorf("offset fetch failed when get pulsar topic %s, kafka topic: %s", addr.String(), topic)
@@ -763,6 +763,18 @@ func (b *Broker) OffsetFetchAction(addr net.Addr, topic, clientID, groupID strin
 		kafkaOffset = messagePair.Offset + 1
 		messageId = messagePair.MessageId
 	}
+
+	kafkaKey := b.offsetManager.GenerateKey(user.username, topic, groupID, req.PartitionId)
+	logrus.Infof("acquire offset, key: %s, topic: %s, partition: %d, offset: %d, message id: %s", kafkaKey, topic, req.PartitionId, kafkaOffset, messageId)
+
+	group, err := b.groupCoordinator.GetGroup(user.username, groupID)
+	if err != nil {
+		logrus.Errorf("get group %s failed, error: %s", groupID, err)
+		return &codec.OffsetFetchPartitionResp{
+			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
+		}, nil
+	}
+
 	b.mutex.RLock()
 	_, exist = b.consumerManager[partitionedTopic+clientID]
 	b.mutex.RUnlock()
@@ -782,18 +794,12 @@ func (b *Broker) OffsetFetchAction(addr net.Addr, topic, clientID, groupID strin
 		b.consumerManager[partitionedTopic+clientID] = &metadata
 		b.mutex.Unlock()
 	}
-	group, err := b.groupCoordinator.GetGroup(user.username, groupID)
-	if err != nil {
-		logrus.Errorf("get group %s failed, error: %s", groupID, err)
-		return &codec.OffsetFetchPartitionResp{
-			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
-		}, nil
-	}
+
 	if !b.checkPartitionTopicExist(group.partitionedTopic, partitionedTopic) {
 		group.partitionedTopic = append(group.partitionedTopic, partitionedTopic)
 	}
 	b.mutex.Lock()
-	b.topicGroupManager[partitionedTopic] = group.groupId
+	b.topicGroupManager[partitionedTopic+clientID] = group.groupId
 	b.mutex.Unlock()
 
 	return &codec.OffsetFetchPartitionResp{
@@ -846,7 +852,7 @@ func (b *Broker) OffsetLeaderEpochAction(addr net.Addr, topic string, req *codec
 	}, nil
 }
 
-func (b *Broker) getProducer(addr net.Addr, username string, pulsarTopic string) (pulsar.Producer, error) {
+func (b *Broker) getProducer(addr net.Addr, username, pulsarTopic string) (pulsar.Producer, error) {
 	b.mutex.Lock()
 	producer, exist := b.producerManager[addr.String()]
 	var err error
@@ -855,13 +861,14 @@ func (b *Broker) getProducer(addr net.Addr, username string, pulsarTopic string)
 		options.Topic = pulsarTopic
 		options.MaxPendingMessages = b.config.MaxProducerRecordSize
 		options.BatchingMaxSize = uint(b.config.MaxBatchSize)
+		options.BatchingMaxMessages = uint(b.config.MaxProducerRecordSize)
 		producer, err = b.pClient.CreateProducer(options)
 		if err != nil {
 			b.mutex.Unlock()
-			logrus.Errorf("crate producer failed. topic: %s, err: %s", pulsarTopic, err)
+			logrus.Errorf("%s crate producer failed: %s", pulsarTopic, err)
 			return nil, err
 		}
-		logrus.Infof("create producer success. addr: %s", addr.String())
+		logrus.Infof("%s create producer success, addr: %s", pulsarTopic, addr.String())
 		b.producerManager[addr.String()] = producer
 	}
 	b.mutex.Unlock()
@@ -874,7 +881,7 @@ func (b *Broker) ProduceAction(addr net.Addr, topic string, partition int, req *
 	user, exist := b.userInfoManager[addr.String()]
 	b.mutex.RUnlock()
 	if !exist {
-		logrus.Errorf("user not exist. username: %s, kafkaTopic: %s", user.username, topic)
+		logrus.Errorf("user not exist. username: %s, topic: %s", user.username, topic)
 		return &codec.ProducePartitionResp{
 			ErrorCode:       codec.TOPIC_AUTHORIZATION_FAILED,
 			RecordErrorList: errList,
@@ -888,7 +895,7 @@ func (b *Broker) ProduceAction(addr net.Addr, topic string, partition int, req *
 	}
 	producer, err := b.getProducer(addr, user.username, pulsarTopic)
 	if err != nil {
-		logrus.Errorf("create producer failed. username: %s, kafkaTopic: %s", user.username, topic)
+		logrus.Errorf("create producer failed, username: %s, topic: %s", user.username, topic)
 		return &codec.ProducePartitionResp{
 			ErrorCode:       codec.TOPIC_AUTHORIZATION_FAILED,
 			RecordErrorList: errList,
@@ -976,7 +983,7 @@ func (b *Broker) HeartBeatAction(addr net.Addr, req codec.HeartbeatReq) *codec.H
 	user, exist := b.userInfoManager[addr.String()]
 	b.mutex.RUnlock()
 	if !exist {
-		logrus.Errorf("HeartBeat failed when get userinfo by addr %s", addr.String())
+		logrus.Errorf("heartbeat user not exist when get userinfo by addr %s", addr.String())
 		return &codec.HeartbeatResp{
 			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
 		}
@@ -985,15 +992,20 @@ func (b *Broker) HeartBeatAction(addr net.Addr, req codec.HeartbeatReq) *codec.H
 	if resp.ErrorCode == codec.REBALANCE_IN_PROGRESS {
 		group, err := b.groupCoordinator.GetGroup(user.username, req.GroupId)
 		if err != nil {
-			logrus.Errorf("HeartBeat failed when get group by addr %s", addr.String())
+			logrus.Errorf("rebalance but heartbeat failed when get group, addr: %s, err: %v", addr.String(), err)
 			return resp
 		}
 		for _, topic := range group.partitionedTopic {
 			b.mutex.Lock()
 			consumerMetadata, exist := b.consumerManager[topic+req.ClientId]
 			if exist {
+				consumerMetadata.mutex.Lock()
 				consumerMetadata.consumer.Close()
-				logrus.Infof("success close consumer topic by heartbeat rebalance: %s", group.partitionedTopic)
+				consumerMetadata.mutex.Unlock()
+				if err := b.offsetManager.GracefulSendOffsetMessage(topic, consumerMetadata); err != nil {
+					logrus.Errorf("graceful send offset message failed: %v", err)
+				}
+				logrus.Infof("success close consumer topic due to heartbeat failed: %s", group.partitionedTopic)
 				delete(b.consumerManager, topic+req.ClientId)
 				consumerMetadata = nil
 			}
@@ -1048,5 +1060,23 @@ func (b *Broker) DisconnectAction(addr net.Addr) {
 	// leave group will use user information
 	b.mutex.Lock()
 	delete(b.userInfoManager, addr.String())
+	b.mutex.Unlock()
+}
+
+func (b *Broker) Close() {
+	if err := b.offsetManager.GracefulSendOffsetMessages(b.consumerManager); err != nil {
+		logrus.Errorf("graceful send offset messages failed: %v", err)
+	}
+	b.CloseServer()
+	b.offsetManager.Close()
+	b.mutex.Lock()
+	for key, value := range b.pulsarClientManage {
+		value.Close()
+		delete(b.pulsarClientManage, key)
+	}
+	for key, value := range b.producerManager {
+		value.Close()
+		delete(b.producerManager, key)
+	}
 	b.mutex.Unlock()
 }

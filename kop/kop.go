@@ -178,6 +178,7 @@ func NewKop(impl Server, config *Config) (*Broker, error) {
 	}
 	broker.offsetManager, err = NewOffsetManager(broker.pClient, config, broker.pAdmin)
 	if err != nil {
+		logrus.Errorf("new offset manager failed: %v", err)
 		broker.Close()
 		return nil, err
 	}
@@ -210,12 +211,20 @@ func NewKop(impl Server, config *Config) (*Broker, error) {
 }
 
 func (b *Broker) Run() error {
-	logrus.Infof("broker started!")
-	go b.knetServer.Run()
+	logrus.Infof("kop broker running")
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				logrus.Errorf("panic: kop broker stop: %v", err)
+			}
+			logrus.Errorf("kop broker stopped")
+		}()
+		b.knetServer.Run()
+	}()
 	return nil
 }
 
-func (b *Broker) Close() {
+func (b *Broker) CloseServer() {
 	if err := b.knetServer.Stop(); err != nil {
 		logrus.Errorf("stop broker failed: %v", err)
 	}

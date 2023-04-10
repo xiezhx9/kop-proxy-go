@@ -63,12 +63,13 @@ func (g *GroupCoordinatorStandalone) HandleJoinGroup(username, groupId, memberId
 	}
 
 	numMember := g.getGroupMembersLen(group)
-	if g.config.MaxConsumersPerGroup > 0 && numMember >= g.config.MaxConsumersPerGroup {
+	isMemberExist := g.checkMemberExist(group, memberId)
+	if !isMemberExist && g.config.MaxConsumersPerGroup > 0 && numMember >= g.config.MaxConsumersPerGroup {
 		logrus.Errorf("join group failed, exceed maximum number of members. groupId: %s, memberId: %s, current: %d, maxConsumersPerGroup: %d",
 			groupId, memberId, numMember, g.config.MaxConsumersPerGroup)
 		return &codec.JoinGroupResp{
-			MemberId:  memberId,
-			ErrorCode: codec.GROUP_MAX_SIZE_REACHED,
+			MemberId: memberId,
+			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
 		}, nil
 	}
 
@@ -651,13 +652,13 @@ func (g *GroupCoordinatorStandalone) checkSyncMemberGenerationId(group *Group, m
 func (g *GroupCoordinatorStandalone) addNewMemberAndReBalance(group *Group, clientId, memberId, protocolType string, protocols []*codec.GroupProtocol) (string, error) {
 	group.groupNewMemberLock.Lock()
 	if g.getGroupMembersLen(group) > 0 && g.getGroupStatus(group) != Stable {
-		logrus.Warnf("new member wait for stable. Current group status is CompletingRebalance.")
+		logrus.Warnf("new member wait for stable, current group status is CompletingRebalance")
 		err := g.awaitingRebalance(group, g.config.RebalanceTickMs, sessionTimeoutMs, Stable)
 		// avoid new member joined before sync-consumer leaving the sync loop
 		time.Sleep((time.Duration(g.config.RebalanceTickMs) + 100) * time.Millisecond)
 		if err != nil {
 			group.groupNewMemberLock.Unlock()
-			logrus.Errorf("new member join group %s failed. Current group status is %d, cause: %s, tickMs: %d, timeout: %d",
+			logrus.Errorf("new member join group %s failed, current group status is %d, cause: %s, tickMs: %d, timeout: %d",
 				group.groupId, group.groupStatus, err, g.config.RebalanceTickMs, sessionTimeoutMs)
 			return memberId, err
 		}
