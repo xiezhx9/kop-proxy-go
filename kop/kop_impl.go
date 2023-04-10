@@ -17,6 +17,19 @@ import (
 	"time"
 )
 
+func (b *Broker) ConnectionOpened(conn *knet.Conn) {
+	if atomic.LoadInt32(&b.connCount) > b.config.MaxConn {
+		logrus.Infof("connection reach max, refused to connect %s", conn.RemoteAddr())
+		return
+	}
+
+	b.ConnMap.Store(conn.RemoteAddr(), conn.Conn)
+
+	count := atomic.AddInt32(&b.connCount, 1)
+
+	logrus.Infof("new connection opened from %s, connCount %d", conn.RemoteAddr(), count)
+}
+
 func (b *Broker) ConnectionClosed(conn *knet.Conn) {
 	logrus.Infof("connection closed from %s", conn.RemoteAddr())
 	b.DisconnectAction(conn.RemoteAddr())
@@ -1019,6 +1032,24 @@ func (b *Broker) HeartBeatAction(addr net.Addr, req codec.HeartbeatReq) *codec.H
 		}
 	}
 	return resp
+}
+
+func (b *Broker) DisconnectAll() {
+	logrus.Info("connection all closed.")
+	for addr := range b.producerManager {
+		v, loaded := b.ConnMap.Load(addr)
+		if !loaded {
+			continue
+		}
+
+		conn, ok := v.(net.Conn)
+		if !ok {
+			continue
+		}
+
+		err := conn.Close()
+		logrus.Errorf("conn closed failed :%v.", err.Error())
+	}
 }
 
 func (b *Broker) DisconnectAction(addr net.Addr) {
