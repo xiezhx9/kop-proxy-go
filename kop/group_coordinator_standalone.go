@@ -12,20 +12,20 @@ import (
 
 const sessionTimeoutMs = 30000
 
-type GroupCoordinatorStandalone struct {
+type GroupCoordinatorMemory struct {
 	config       *Config
 	pulsarClient pulsar.Client
 	mutex        sync.RWMutex
 	groupManager map[string]*Group
 }
 
-func NewGroupCoordinatorStandalone(config *Config, pulsarClient pulsar.Client) *GroupCoordinatorStandalone {
-	coordinatorImpl := GroupCoordinatorStandalone{config: config, pulsarClient: pulsarClient}
+func NewGroupCoordinatorMemory(config *Config, pulsarClient pulsar.Client) *GroupCoordinatorMemory {
+	coordinatorImpl := GroupCoordinatorMemory{config: config, pulsarClient: pulsarClient}
 	coordinatorImpl.groupManager = make(map[string]*Group)
 	return &coordinatorImpl
 }
 
-func (g *GroupCoordinatorStandalone) HandleJoinGroup(username, groupId, memberId, clientId, protocolType string, sessionTimeoutMs int,
+func (g *GroupCoordinatorMemory) HandleJoinGroup(username, groupId, memberId, clientId, protocolType string, sessionTimeoutMs int,
 	protocols []*codec.GroupProtocol) (*codec.JoinGroupResp, error) {
 	// do parameters check
 	memberId, code, err := g.joinGroupParamsCheck(clientId, groupId, memberId, sessionTimeoutMs, g.config)
@@ -68,7 +68,7 @@ func (g *GroupCoordinatorStandalone) HandleJoinGroup(username, groupId, memberId
 		logrus.Errorf("join group failed, exceed maximum number of members. groupId: %s, memberId: %s, current: %d, maxConsumersPerGroup: %d",
 			groupId, memberId, numMember, g.config.MaxConsumersPerGroup)
 		return &codec.JoinGroupResp{
-			MemberId: memberId,
+			MemberId:  memberId,
 			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
 		}, nil
 	}
@@ -216,7 +216,7 @@ func (g *GroupCoordinatorStandalone) HandleJoinGroup(username, groupId, memberId
 	}, nil
 }
 
-func (g *GroupCoordinatorStandalone) HandleSyncGroup(username, groupId, memberId string, generation int,
+func (g *GroupCoordinatorMemory) HandleSyncGroup(username, groupId, memberId string, generation int,
 	groupAssignments []*codec.GroupAssignment) (*codec.SyncGroupResp, error) {
 	code, err := g.syncGroupParamsCheck(groupId, memberId)
 	if err != nil {
@@ -301,7 +301,7 @@ func (g *GroupCoordinatorStandalone) HandleSyncGroup(username, groupId, memberId
 	}, nil
 }
 
-func (g *GroupCoordinatorStandalone) HandleLeaveGroup(username, groupId string,
+func (g *GroupCoordinatorMemory) HandleLeaveGroup(username, groupId string,
 	members []*codec.LeaveGroupMember) (*codec.LeaveGroupResp, error) {
 	// reject if groupId is empty
 	if groupId == "" {
@@ -338,7 +338,7 @@ func (g *GroupCoordinatorStandalone) HandleLeaveGroup(username, groupId string,
 	return &codec.LeaveGroupResp{ErrorCode: codec.NONE, Members: members}, nil
 }
 
-func (g *GroupCoordinatorStandalone) GetGroup(username, groupId string) (*Group, error) {
+func (g *GroupCoordinatorMemory) GetGroup(username, groupId string) (*Group, error) {
 	g.mutex.RLock()
 	group, exist := g.groupManager[username+groupId]
 	g.mutex.RUnlock()
@@ -348,13 +348,13 @@ func (g *GroupCoordinatorStandalone) GetGroup(username, groupId string) (*Group,
 	return group, nil
 }
 
-func (g *GroupCoordinatorStandalone) DelGroup(username, groupId string) {
+func (g *GroupCoordinatorMemory) DelGroup(username, groupId string) {
 	g.mutex.Lock()
 	delete(g.groupManager, username+groupId)
 	g.mutex.Unlock()
 }
 
-func (g *GroupCoordinatorStandalone) addMemberAndRebalance(group *Group, clientId, memberId, protocolType string, protocols []*codec.GroupProtocol, rebalanceDelayMs int) (string, error) {
+func (g *GroupCoordinatorMemory) addMemberAndRebalance(group *Group, clientId, memberId, protocolType string, protocols []*codec.GroupProtocol, rebalanceDelayMs int) (string, error) {
 	if memberId == EmptyMemberId {
 		memberId = clientId + "-" + uuid.New().String()
 	}
@@ -377,11 +377,11 @@ func (g *GroupCoordinatorStandalone) addMemberAndRebalance(group *Group, clientI
 	return memberId, g.doRebalance(group, rebalanceDelayMs)
 }
 
-func (g *GroupCoordinatorStandalone) updateMemberAndRebalance(group *Group, clientId, memberId, protocolType string, protocols []*codec.GroupProtocol, rebalanceDelayMs int) error {
+func (g *GroupCoordinatorMemory) updateMemberAndRebalance(group *Group, clientId, memberId, protocolType string, protocols []*codec.GroupProtocol, rebalanceDelayMs int) error {
 	return g.doRebalance(group, rebalanceDelayMs)
 }
 
-func (g *GroupCoordinatorStandalone) HandleHeartBeat(username, groupId, memberId string) *codec.HeartbeatResp {
+func (g *GroupCoordinatorMemory) HandleHeartBeat(username, groupId, memberId string) *codec.HeartbeatResp {
 	if groupId == "" {
 		logrus.Errorf("groupId is empty.")
 		return &codec.HeartbeatResp{
@@ -418,11 +418,11 @@ func (g *GroupCoordinatorStandalone) HandleHeartBeat(username, groupId, memberId
 	return &codec.HeartbeatResp{ErrorCode: codec.NONE}
 }
 
-func (g *GroupCoordinatorStandalone) prepareRebalance(group *Group) {
+func (g *GroupCoordinatorMemory) prepareRebalance(group *Group) {
 	g.setGroupStatus(group, PreparingRebalance)
 }
 
-func (g *GroupCoordinatorStandalone) doRebalance(group *Group, rebalanceDelayMs int) error {
+func (g *GroupCoordinatorMemory) doRebalance(group *Group, rebalanceDelayMs int) error {
 	group.groupLock.Lock()
 	g.prepareRebalance(group)
 	if group.canRebalance {
@@ -441,14 +441,14 @@ func (g *GroupCoordinatorStandalone) doRebalance(group *Group, rebalanceDelayMs 
 	}
 }
 
-func (g *GroupCoordinatorStandalone) vote(group *Group, protocols []*codec.GroupProtocol) {
+func (g *GroupCoordinatorMemory) vote(group *Group, protocols []*codec.GroupProtocol) {
 	// TODO make clear multiple protocol scene
 	group.groupLock.Lock()
 	group.supportedProtocol = protocols[0].ProtocolName
 	group.groupLock.Unlock()
 }
 
-func (g *GroupCoordinatorStandalone) awaitingRebalance(group *Group, rebalanceTickMs int, sessionTimeout int, waitForStatus GroupStatus) error {
+func (g *GroupCoordinatorMemory) awaitingRebalance(group *Group, rebalanceTickMs int, sessionTimeout int, waitForStatus GroupStatus) error {
 	start := time.Now()
 	for {
 		if g.getGroupStatus(group) == waitForStatus || g.getGroupMembersLen(group) == 0 {
@@ -461,34 +461,34 @@ func (g *GroupCoordinatorStandalone) awaitingRebalance(group *Group, rebalanceTi
 	}
 }
 
-func (g *GroupCoordinatorStandalone) getGroupStatus(group *Group) GroupStatus {
+func (g *GroupCoordinatorMemory) getGroupStatus(group *Group) GroupStatus {
 	group.groupStatusLock.RLock()
 	status := group.groupStatus
 	group.groupStatusLock.RUnlock()
 	return status
 }
 
-func (g *GroupCoordinatorStandalone) getGroupGenerationId(group *Group) int {
+func (g *GroupCoordinatorMemory) getGroupGenerationId(group *Group) int {
 	group.groupLock.RLock()
 	groupGenerationId := group.generationId
 	group.groupLock.RUnlock()
 	return groupGenerationId
 }
 
-func (g *GroupCoordinatorStandalone) getGroupMembersLen(group *Group) int {
+func (g *GroupCoordinatorMemory) getGroupMembersLen(group *Group) int {
 	group.groupMemberLock.RLock()
 	groupMembersLen := len(group.members)
 	group.groupMemberLock.RUnlock()
 	return groupMembersLen
 }
 
-func (g *GroupCoordinatorStandalone) setGroupStatus(group *Group, status GroupStatus) {
+func (g *GroupCoordinatorMemory) setGroupStatus(group *Group, status GroupStatus) {
 	group.groupStatusLock.Lock()
 	group.groupStatus = status
 	group.groupStatusLock.Unlock()
 }
 
-func (g *GroupCoordinatorStandalone) syncGroupParamsCheck(groupId, memberId string) (codec.ErrorCode, error) {
+func (g *GroupCoordinatorMemory) syncGroupParamsCheck(groupId, memberId string) (codec.ErrorCode, error) {
 	// reject if groupId is empty
 	if groupId == "" {
 		return codec.INVALID_GROUP_ID, errors.Errorf("groupId is empty")
@@ -500,7 +500,7 @@ func (g *GroupCoordinatorStandalone) syncGroupParamsCheck(groupId, memberId stri
 	return codec.NONE, nil
 }
 
-func (g *GroupCoordinatorStandalone) joinGroupParamsCheck(clientId, groupId, memberId string, sessionTimeoutMs int, config *Config) (string, codec.ErrorCode, error) {
+func (g *GroupCoordinatorMemory) joinGroupParamsCheck(clientId, groupId, memberId string, sessionTimeoutMs int, config *Config) (string, codec.ErrorCode, error) {
 	// reject if groupId is empty
 	if groupId == "" {
 		return memberId, codec.INVALID_GROUP_ID, errors.Errorf("empty groupId")
@@ -514,7 +514,7 @@ func (g *GroupCoordinatorStandalone) joinGroupParamsCheck(clientId, groupId, mem
 	return memberId, codec.NONE, nil
 }
 
-func (g *GroupCoordinatorStandalone) joinGroupProtocolCheck(group *Group, protocolType string, protocols []*codec.GroupProtocol) (codec.ErrorCode, error) {
+func (g *GroupCoordinatorMemory) joinGroupProtocolCheck(group *Group, protocolType string, protocols []*codec.GroupProtocol) (codec.ErrorCode, error) {
 	// if the new member does not support the group protocol, reject it
 	if g.getGroupStatus(group) != Empty {
 		if group.protocolType != protocolType {
@@ -546,30 +546,30 @@ func matchProtocols(groupProtocols map[string]string, memberProtocols []*codec.G
 	return true
 }
 
-func (g *GroupCoordinatorStandalone) isMemberLeader(group *Group, memberId string) bool {
+func (g *GroupCoordinatorMemory) isMemberLeader(group *Group, memberId string) bool {
 	return g.getMemberLeader(group) == memberId
 }
 
-func (g *GroupCoordinatorStandalone) getMemberLeader(group *Group) string {
+func (g *GroupCoordinatorMemory) getMemberLeader(group *Group) string {
 	group.groupMemberLock.RLock()
 	leader := group.leader
 	group.groupMemberLock.RUnlock()
 	return leader
 }
 
-func (g *GroupCoordinatorStandalone) setMemberLeader(group *Group, leader string) {
+func (g *GroupCoordinatorMemory) setMemberLeader(group *Group, leader string) {
 	group.groupMemberLock.Lock()
 	group.leader = leader
 	group.groupMemberLock.Unlock()
 }
 
-func (g *GroupCoordinatorStandalone) deleteMember(group *Group, memberId string) {
+func (g *GroupCoordinatorMemory) deleteMember(group *Group, memberId string) {
 	group.groupMemberLock.Lock()
 	delete(group.members, memberId)
 	group.groupMemberLock.Unlock()
 }
 
-func (g *GroupCoordinatorStandalone) getLeaderMembers(group *Group, memberId string) (members []*codec.Member) {
+func (g *GroupCoordinatorMemory) getLeaderMembers(group *Group, memberId string) (members []*codec.Member) {
 	if g.getMemberLeader(group) == "" {
 		g.setMemberLeader(group, memberId)
 	}
@@ -581,12 +581,12 @@ func (g *GroupCoordinatorStandalone) getLeaderMembers(group *Group, memberId str
 	return members
 }
 
-func (g *GroupCoordinatorStandalone) checkMemberExist(group *Group, memberId string) bool {
+func (g *GroupCoordinatorMemory) checkMemberExist(group *Group, memberId string) bool {
 	_, exist := group.members[memberId]
 	return exist
 }
 
-func (g *GroupCoordinatorStandalone) awaitingJoin(group *Group, memberId string, rebalanceTickMs int, sessionTimeout int) error {
+func (g *GroupCoordinatorMemory) awaitingJoin(group *Group, memberId string, rebalanceTickMs int, sessionTimeout int) error {
 	start := time.Now()
 	for {
 		groupGenerationId := g.getGroupGenerationId(group)
@@ -610,7 +610,7 @@ func (g *GroupCoordinatorStandalone) awaitingJoin(group *Group, memberId string,
 	}
 }
 
-func (g *GroupCoordinatorStandalone) checkJoinMemberGenerationId(group *Group, memberId string) bool {
+func (g *GroupCoordinatorMemory) checkJoinMemberGenerationId(group *Group, memberId string) bool {
 	group.groupMemberLock.RLock()
 	for _, member := range group.members {
 		if member.joinGenerationId != g.getGroupGenerationId(group) {
@@ -623,7 +623,7 @@ func (g *GroupCoordinatorStandalone) checkJoinMemberGenerationId(group *Group, m
 	return true
 }
 
-func (g *GroupCoordinatorStandalone) awaitingSync(group *Group, rebalanceTickMs int, sessionTimeout int, memberId string) error {
+func (g *GroupCoordinatorMemory) awaitingSync(group *Group, rebalanceTickMs int, sessionTimeout int, memberId string) error {
 	start := time.Now()
 	for {
 		if g.checkSyncMemberGenerationId(group, memberId) {
@@ -636,7 +636,7 @@ func (g *GroupCoordinatorStandalone) awaitingSync(group *Group, rebalanceTickMs 
 	}
 }
 
-func (g *GroupCoordinatorStandalone) checkSyncMemberGenerationId(group *Group, memberId string) bool {
+func (g *GroupCoordinatorMemory) checkSyncMemberGenerationId(group *Group, memberId string) bool {
 	group.groupMemberLock.RLock()
 	for _, member := range group.members {
 		if member.syncGenerationId != member.joinGenerationId {
@@ -649,7 +649,7 @@ func (g *GroupCoordinatorStandalone) checkSyncMemberGenerationId(group *Group, m
 	return true
 }
 
-func (g *GroupCoordinatorStandalone) addNewMemberAndReBalance(group *Group, clientId, memberId, protocolType string, protocols []*codec.GroupProtocol) (string, error) {
+func (g *GroupCoordinatorMemory) addNewMemberAndReBalance(group *Group, clientId, memberId, protocolType string, protocols []*codec.GroupProtocol) (string, error) {
 	group.groupNewMemberLock.Lock()
 	if g.getGroupMembersLen(group) > 0 && g.getGroupStatus(group) != Stable {
 		logrus.Warnf("new member wait for stable, current group status is CompletingRebalance")

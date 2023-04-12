@@ -57,8 +57,8 @@ const (
 type GroupCoordinatorType string
 
 const (
-	Standalone GroupCoordinatorType = "standalone"
-	Cluster    GroupCoordinatorType = "cluster"
+	GroupCoordinatorTypeMemory GroupCoordinatorType = "memory"
+	GroupCoordinatorTypeRedis  GroupCoordinatorType = "redis"
 )
 
 const (

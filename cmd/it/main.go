@@ -30,7 +30,7 @@ func main() {
 	config.PulsarNamespace = "default"
 	config.OffsetTopic = "kafka_offset"
 	config.AutoCreateOffsetTopic = true
-	config.GroupCoordinatorType = kop.Standalone
+	config.GroupCoordinatorType = kop.GroupCoordinatorTypeMemory
 	config.InitialDelayedJoinMs = 3000
 	config.RebalanceTickMs = 100
 	e := &ItKafsarImpl{}

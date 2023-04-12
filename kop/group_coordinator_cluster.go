@@ -26,13 +26,13 @@ type MemberForRedis struct {
 	Protocols        map[string][]byte `json:"Protocols,omitempty"`
 }
 
-type GroupCoordinatorCluster struct {
+type GroupCoordinatorRedis struct {
 	groupManager map[string]*Group
 	redisdb      redis.Cmdable
 }
 
-func NewGroupCoordinatorCluster(redisConfig RedisConfig) *GroupCoordinatorCluster {
-	g := &GroupCoordinatorCluster{}
+func NewGroupCoordinatorRedis(redisConfig RedisConfig) *GroupCoordinatorRedis {
+	g := &GroupCoordinatorRedis{}
 	g.groupManager = make(map[string]*Group)
 	var redisdb redis.Cmdable
 	if redisConfig.RedisType == RedisCluster {
@@ -50,29 +50,29 @@ func NewGroupCoordinatorCluster(redisConfig RedisConfig) *GroupCoordinatorCluste
 	return g
 }
 
-func (gcc *GroupCoordinatorCluster) HandleJoinGroup(username, groupId, memberId, clientId, protocolType string, sessionTimeoutMs int,
+func (gcc *GroupCoordinatorRedis) HandleJoinGroup(username, groupId, memberId, clientId, protocolType string, sessionTimeoutMs int,
 	protocols []*codec.GroupProtocol) (*codec.JoinGroupResp, error) {
 	panic("implement handle join group")
 }
 
-func (gcc *GroupCoordinatorCluster) HandleSyncGroup(username, groupId, memberId string, generation int,
+func (gcc *GroupCoordinatorRedis) HandleSyncGroup(username, groupId, memberId string, generation int,
 	groupAssignments []*codec.GroupAssignment) (*codec.SyncGroupResp, error) {
 	panic("implement handle sync group")
 }
 
-func (gcc *GroupCoordinatorCluster) HandleLeaveGroup(username, groupId string,
+func (gcc *GroupCoordinatorRedis) HandleLeaveGroup(username, groupId string,
 	members []*codec.LeaveGroupMember) (*codec.LeaveGroupResp, error) {
 	panic("implement handle leave group")
 }
 
-func (gcc *GroupCoordinatorCluster) HandleHeartBeat(username, groupId, memberId string) *codec.HeartbeatResp {
+func (gcc *GroupCoordinatorRedis) HandleHeartBeat(username, groupId, memberId string) *codec.HeartbeatResp {
 	panic("implement handle heart beat")
 }
 
-func (gcc *GroupCoordinatorCluster) GetGroup(username, groupId string) (*Group, error) {
+func (gcc *GroupCoordinatorRedis) GetGroup(username, groupId string) (*Group, error) {
 	panic("implement get group")
 }
 
-func (gcc *GroupCoordinatorCluster) DelGroup(username, groupId string) {
+func (gcc *GroupCoordinatorRedis) DelGroup(username, groupId string) {
 	panic("implement get group")
 }
