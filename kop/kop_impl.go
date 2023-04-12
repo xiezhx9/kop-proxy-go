@@ -64,7 +64,16 @@ func (b *Broker) UnSupportedApi(conn *knet.Conn, apiKey codec.ApiCode, apiVersio
 func (b *Broker) ApiVersion(conn *knet.Conn, req *codec.ApiReq) (*codec.ApiResp, error) {
 	version := req.ApiVersion
 	if version <= 3 {
-		return b.ReactApiVersion(req)
+		startAt := time.Now()
+		apiResp, err := b.ReactApiVersion(req)
+		cost := float64(time.Since(startAt).Milliseconds())
+		metrics.KafkaProtocolApiVersionsLatency.Observe(cost)
+		if err != nil {
+			metrics.KafkaProtocolApiVersionsFailCount.Inc()
+			return apiResp, err
+		}
+		metrics.KafkaProtocolApiVersionsSuccessCount.Inc()
+		return apiResp, nil
 	}
 	logrus.Warnf("unsupported ApiVersion version %d", version)
 	return nil, fmt.Errorf("unsupported ApiVersion version %d", version)
@@ -77,7 +86,16 @@ func (b *Broker) Fetch(conn *knet.Conn, req *codec.FetchReq) (*codec.FetchResp, 
 	}
 	version := req.ApiVersion
 	if version == 10 || version == 11 {
-		return b.ReactFetch(networkContext, req)
+		startAt := time.Now()
+		fetchResp, err := b.ReactFetch(networkContext, req)
+		cost := float64(time.Since(startAt).Milliseconds())
+		metrics.KafkaProtocolFetchLatency.Observe(cost)
+		if err != nil {
+			metrics.KafkaProtocolFetchFailCount.Inc()
+			return fetchResp, err
+		}
+		metrics.KafkaProtocolFetchSuccessCount.Inc()
+		return fetchResp, nil
 	}
 	logrus.Warnf("unsupported Fetch version %d", version)
 	return nil, fmt.Errorf("unsupported Fetch version %d", version)
@@ -90,7 +108,16 @@ func (b *Broker) FindCoordinator(conn *knet.Conn, req *codec.FindCoordinatorReq)
 	}
 	version := req.ApiVersion
 	if version == 0 || version == 3 {
-		return b.ReactFindCoordinator(req, b.config)
+		startAt := time.Now()
+		findCoordinatorResp, err := b.ReactFindCoordinator(req, b.config)
+		cost := float64(time.Since(startAt).Milliseconds())
+		metrics.KafkaProtocolFindCoordinatorLatency.Observe(cost)
+		if err != nil {
+			metrics.KafkaProtocolFindCoordinatorFailCount.Inc()
+			return findCoordinatorResp, err
+		}
+		metrics.KafkaProtocolFindCoordinatorSuccessCount.Inc()
+		return findCoordinatorResp, nil
 	}
 	logrus.Warnf("unsupported FindCoordinator version %d", version)
 	return nil, fmt.Errorf("unsupported FindCoordinator version %d", version)
@@ -100,7 +127,16 @@ func (b *Broker) Heartbeat(conn *knet.Conn, req *codec.HeartbeatReq) (*codec.Hea
 	networkContext := b.getCtx(conn)
 	version := req.ApiVersion
 	if version == 4 {
-		return b.ReactHeartbeat(req, networkContext)
+		startAt := time.Now()
+		heartbeatResp, err := b.ReactHeartbeat(req, networkContext)
+		cost := float64(time.Since(startAt).Milliseconds())
+		metrics.KafkaProtocolHeartbeatLatency.Observe(cost)
+		if err != nil {
+			metrics.KafkaProtocolHeartbeatFailCount.Inc()
+			return heartbeatResp, err
+		}
+		metrics.KafkaProtocolHeartbeatSuccessCount.Inc()
+		return heartbeatResp, nil
 	}
 	logrus.Warnf("unsupported Heartbeat version %d", version)
 	return nil, fmt.Errorf("unsupported Heartbeat version %d", version)
@@ -113,7 +149,16 @@ func (b *Broker) JoinGroup(conn *knet.Conn, req *codec.JoinGroupReq) (*codec.Joi
 	}
 	version := req.ApiVersion
 	if version == 1 || version == 6 {
-		return b.ReactJoinGroup(networkContext, req)
+		startAt := time.Now()
+		joinGroupResp, err := b.ReactJoinGroup(networkContext, req)
+		cost := float64(time.Since(startAt).Milliseconds())
+		metrics.KafkaProtocolJoinGroupLatency.Observe(cost)
+		if err != nil {
+			metrics.KafkaProtocolJoinGroupFailCount.Inc()
+			return joinGroupResp, err
+		}
+		metrics.KafkaProtocolJoinGroupSuccessCount.Inc()
+		return joinGroupResp, nil
 	}
 	logrus.Warnf("unsupported JoinGroup version %d", version)
 	return nil, fmt.Errorf("unsupported JoinGroup version %d", version)
@@ -126,7 +171,16 @@ func (b *Broker) LeaveGroup(conn *knet.Conn, req *codec.LeaveGroupReq) (*codec.L
 	}
 	version := req.ApiVersion
 	if version == 0 || version == 4 {
-		return b.ReactLeaveGroup(networkContext, req)
+		startAt := time.Now()
+		leaveGroupResp, err := b.ReactLeaveGroup(networkContext, req)
+		cost := float64(time.Since(startAt).Milliseconds())
+		metrics.KafkaProtocolLeaveGroupLatency.Observe(cost)
+		if err != nil {
+			metrics.KafkaProtocolLeaveGroupFailCount.Inc()
+			return leaveGroupResp, err
+		}
+		metrics.KafkaProtocolLeaveGroupSuccessCount.Inc()
+		return leaveGroupResp, nil
 	}
 	logrus.Warnf("unsupported LeaveGroup version %d", version)
 	return nil, fmt.Errorf("unsupported LeaveGroup version %d", version)
@@ -139,7 +193,16 @@ func (b *Broker) ListOffsets(conn *knet.Conn, req *codec.ListOffsetsReq) (*codec
 	}
 	version := req.ApiVersion
 	if version == 1 || version == 5 || version == 6 {
-		return b.ListOffsetsVersion(networkContext, req)
+		startAt := time.Now()
+		listOffsetsResp, err := b.ListOffsetsVersion(networkContext, req)
+		cost := float64(time.Since(startAt).Milliseconds())
+		metrics.KafkaProtocolListOffsetsLatency.Observe(cost)
+		if err != nil {
+			metrics.KafkaProtocolListOffsetsFailCount.Inc()
+			return listOffsetsResp, err
+		}
+		metrics.KafkaProtocolListOffsetsSuccessCount.Inc()
+		return listOffsetsResp, nil
 	}
 	logrus.Warnf("unsupported ListOffsets version %d", version)
 	return nil, fmt.Errorf("unsupported ListOffsets version %d", version)
@@ -152,7 +215,16 @@ func (b *Broker) Metadata(conn *knet.Conn, req *codec.MetadataReq) (*codec.Metad
 	}
 	version := req.ApiVersion
 	if version <= 9 {
-		return b.ReactMetadata(networkContext, req, b.config)
+		startAt := time.Now()
+		metadataResp, err := b.ReactMetadata(networkContext, req, b.config)
+		cost := float64(time.Since(startAt).Milliseconds())
+		metrics.KafkaProtocolMetadataLatency.Observe(cost)
+		if err != nil {
+			metrics.KafkaProtocolMetadataFailCount.Inc()
+			return metadataResp, err
+		}
+		metrics.KafkaProtocolMetadataSuccessCount.Inc()
+		return metadataResp, nil
 	}
 	logrus.Warnf("unsupported Metadata version %d", version)
 	return nil, fmt.Errorf("unsupported Metadata version %d", version)
@@ -165,7 +237,16 @@ func (b *Broker) OffsetCommit(conn *knet.Conn, req *codec.OffsetCommitReq) (*cod
 	}
 	version := req.ApiVersion
 	if version == 2 || version == 8 {
-		return b.OffsetCommitVersion(networkContext, req)
+		startAt := time.Now()
+		offsetCommitResp, err := b.OffsetCommitVersion(networkContext, req)
+		cost := float64(time.Since(startAt).Milliseconds())
+		metrics.KafkaProtocolOffsetCommitLatency.Observe(cost)
+		if err != nil {
+			metrics.KafkaProtocolOffsetCommitFailCount.Inc()
+			return offsetCommitResp, err
+		}
+		metrics.KafkaProtocolOffsetCommitSuccessCount.Inc()
+		return offsetCommitResp, nil
 	}
 	logrus.Warnf("unsupported OffsetCommit version %d", version)
 	return nil, fmt.Errorf("unsupported OffsetCommit version %d", version)
@@ -178,7 +259,16 @@ func (b *Broker) OffsetFetch(conn *knet.Conn, req *codec.OffsetFetchReq) (*codec
 	}
 	version := req.ApiVersion
 	if version == 1 || version == 6 || version == 7 {
-		return b.OffsetFetchVersion(networkContext, req)
+		startAt := time.Now()
+		offsetFetchResp, err := b.OffsetFetchVersion(networkContext, req)
+		cost := float64(time.Since(startAt).Milliseconds())
+		metrics.KafkaProtocolOffsetFetchLatency.Observe(cost)
+		if err != nil {
+			metrics.KafkaProtocolOffsetFetchFailCount.Inc()
+			return offsetFetchResp, err
+		}
+		metrics.KafkaProtocolOffsetFetchSuccessCount.Inc()
+		return offsetFetchResp, nil
 	}
 	logrus.Warnf("unsupported OffsetFetch version %d", version)
 	return nil, fmt.Errorf("unsupported OffsetFetch version %d", version)
@@ -191,7 +281,16 @@ func (b *Broker) OffsetForLeaderEpoch(conn *knet.Conn, req *codec.OffsetForLeade
 	}
 	version := req.ApiVersion
 	if version == 3 {
-		return b.OffsetForLeaderEpochVersion(networkContext, req)
+		startAt := time.Now()
+		leaderEpochResp, err := b.OffsetForLeaderEpochVersion(networkContext, req)
+		cost := float64(time.Since(startAt).Milliseconds())
+		metrics.KafkaProtocolOffsetForLeaderEpochLatency.Observe(cost)
+		if err != nil {
+			metrics.KafkaProtocolOffsetForLeaderEpochFailCount.Inc()
+			return leaderEpochResp, err
+		}
+		metrics.KafkaProtocolOffsetForLeaderEpochSuccessCount.Inc()
+		return leaderEpochResp, nil
 	}
 	logrus.Warnf("unsupported OffsetForLeaderEpoch version %d", version)
 	return nil, fmt.Errorf("unsupported OffsetForLeaderEpoch version %d", version)
@@ -204,7 +303,16 @@ func (b *Broker) Produce(conn *knet.Conn, req *codec.ProduceReq) (*codec.Produce
 	}
 	version := req.ApiVersion
 	if version == 7 || version == 8 {
-		return b.ReactProduce(networkContext, req, b.config)
+		startAt := time.Now()
+		produceResp, err := b.ReactProduce(networkContext, req, b.config)
+		cost := float64(time.Since(startAt).Milliseconds())
+		metrics.KafkaProtocolProduceLatency.Observe(cost)
+		if err != nil {
+			metrics.KafkaProtocolProduceFailCount.Inc()
+			return produceResp, err
+		}
+		metrics.KafkaProtocolProduceSuccessCount.Inc()
+		return produceResp, nil
 	}
 	logrus.Warnf("unsupported Produce version %d", version)
 	return nil, fmt.Errorf("unsupported Produce version %d", version)
@@ -214,7 +322,16 @@ func (b *Broker) SaslAuthenticate(conn *knet.Conn, req *codec.SaslAuthenticateRe
 	networkContext := b.getCtx(conn)
 	version := req.ApiVersion
 	if version == 1 || version == 2 {
-		return b.ReactSaslHandshakeAuth(req, networkContext)
+		startAt := time.Now()
+		saslAuthenticateResp, err := b.ReactSaslHandshakeAuth(req, networkContext)
+		cost := float64(time.Since(startAt).Milliseconds())
+		metrics.KafkaProtocolSaslAuthenticateLatency.Observe(cost)
+		if err != nil {
+			metrics.KafkaProtocolSaslAuthenticateFailCount.Inc()
+			return saslAuthenticateResp, err
+		}
+		metrics.KafkaProtocolSaslAuthenticateSuccessCount.Inc()
+		return saslAuthenticateResp, nil
 	}
 	logrus.Warnf("unsupported SaslAuthenticate version %d", version)
 	return nil, fmt.Errorf("unsupported SaslAuthenticate version %d", version)
@@ -223,7 +340,16 @@ func (b *Broker) SaslAuthenticate(conn *knet.Conn, req *codec.SaslAuthenticateRe
 func (b *Broker) SaslHandshake(conn *knet.Conn, req *codec.SaslHandshakeReq) (*codec.SaslHandshakeResp, error) {
 	version := req.ApiVersion
 	if version <= 1 {
-		return b.ReactSasl(req)
+		startAt := time.Now()
+		saslHandshakeResp, err := b.ReactSasl(req)
+		cost := float64(time.Since(startAt).Milliseconds())
+		metrics.KafkaProtocolSaslHandshakeLatency.Observe(cost)
+		if err != nil {
+			metrics.KafkaProtocolSaslHandshakeFailCount.Inc()
+			return saslHandshakeResp, err
+		}
+		metrics.KafkaProtocolSaslHandshakeSuccessCount.Inc()
+		return saslHandshakeResp, nil
 	}
 	logrus.Warnf("unsupported SaslHandshake version %d", version)
 	return nil, fmt.Errorf("unsupported SaslHandshake version %d", version)
@@ -236,7 +362,16 @@ func (b *Broker) SyncGroup(conn *knet.Conn, req *codec.SyncGroupReq) (*codec.Syn
 	}
 	version := req.ApiVersion
 	if version == 1 || version == 4 || version == 5 {
-		return b.ReactSyncGroup(networkContext, req)
+		startAt := time.Now()
+		syncGroupResp, err := b.ReactSyncGroup(networkContext, req)
+		cost := float64(time.Since(startAt).Milliseconds())
+		metrics.KafkaProtocolSyncGroupLatency.Observe(cost)
+		if err != nil {
+			metrics.KafkaProtocolSyncGroupFailCount.Inc()
+			return syncGroupResp, err
+		}
+		metrics.KafkaProtocolSyncGroupSuccessCount.Inc()
+		return syncGroupResp, nil
 	}
 	logrus.Warnf("unsupported SyncGroup version %d", version)
 	return nil, fmt.Errorf("unsupported SyncGroup version %d", version)
@@ -784,7 +919,7 @@ func (b *Broker) OffsetFetchAction(addr net.Addr, topic, clientID, groupID strin
 	if err != nil {
 		logrus.Errorf("get group %s failed, error: %s", groupID, err)
 		return &codec.OffsetFetchPartitionResp{
-			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
+			ErrorCode: codec.REBALANCE_IN_PROGRESS,
 		}, nil
 	}
 
@@ -878,10 +1013,10 @@ func (b *Broker) getProducer(addr net.Addr, username, pulsarTopic string) (pulsa
 		producer, err = b.pClient.CreateProducer(options)
 		if err != nil {
 			b.mutex.Unlock()
-			logrus.Errorf("%s crate producer failed: %s", pulsarTopic, err)
+			logrus.Errorf("create producer failed, topic: %s, addr: %s, err: %v", pulsarTopic, addr.String(), err)
 			return nil, err
 		}
-		logrus.Infof("%s create producer success, addr: %s", pulsarTopic, addr.String())
+		logrus.Infof("create producer success, topic: %s, addr: %s", pulsarTopic, addr.String())
 		b.producerManager[addr.String()] = producer
 	}
 	b.mutex.Unlock()
@@ -894,7 +1029,7 @@ func (b *Broker) ProduceAction(addr net.Addr, topic string, partition int, req *
 	user, exist := b.userInfoManager[addr.String()]
 	b.mutex.RUnlock()
 	if !exist {
-		logrus.Errorf("user not exist. username: %s, topic: %s", user.username, topic)
+		logrus.Errorf("user not exist, addr: %s, username: %s, topic: %s", addr.String(), user.username, topic)
 		return &codec.ProducePartitionResp{
 			ErrorCode:       codec.TOPIC_AUTHORIZATION_FAILED,
 			RecordErrorList: errList,
