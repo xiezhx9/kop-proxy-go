@@ -929,13 +929,22 @@ func (b *Broker) ProduceAction(addr net.Addr, topic string, partition int, req *
 		producer.SendAsync(context.Background(), &message, func(id pulsar.MessageID, message *pulsar.ProducerMessage, err error) {
 			atomic.AddInt32(&count, 1)
 			if err != nil {
-				metrics.PulsarSendFailCount.WithLabelValues(topic, pulsarTopic).Inc()
+				metrics.PulsarSendFailCount.Inc()
+				if !b.config.TopicLevelMetricsDisable {
+					metrics.PulsarTopicSendFailCount.WithLabelValues(topic, pulsarTopic).Inc()
+				}
 				logrus.Errorf("send msg failed. username: %s, kafkaTopic: %s, err: %s", user.username, topic, err)
 			} else {
-				metrics.PulsarSendSuccessCount.WithLabelValues(topic, pulsarTopic).Inc()
+				metrics.PulsarSendSuccessCount.Inc()
+				if !b.config.TopicLevelMetricsDisable {
+					metrics.PulsarTopicSendSuccessCount.WithLabelValues(topic, pulsarTopic).Inc()
+				}
 			}
-			metrics.PulsarSendLatency.WithLabelValues(topic, pulsarTopic).Observe(
-				float64(time.Since(startTime).Milliseconds()))
+			cost := float64(time.Since(startTime).Milliseconds())
+			metrics.PulsarSendLatency.Observe(cost)
+			if !b.config.TopicLevelMetricsDisable {
+				metrics.PulsarTopicSendLatency.WithLabelValues(topic, pulsarTopic).Observe(cost)
+			}
 			if count == int32(len(batch)) {
 				offset = ConvertMsgId(id)
 				producerChan <- true

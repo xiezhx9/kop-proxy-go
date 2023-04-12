@@ -50,6 +50,9 @@ type Config struct {
 	InitialDelayedJoinMs int
 	// RebalanceTickMs
 	RebalanceTickMs int
+
+	// TopicLevelMetricsDisable if true, disable topic level metrics
+	TopicLevelMetricsDisable bool
 }
 
 type PulsarConfig struct {
