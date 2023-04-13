@@ -1,0 +1,10 @@
+run:
+  deadline: 3m
+
+linters:
+  enable:
+    - bodyclose
+    - gofmt
+    - misspell
+    - prealloc
+    - unconvert

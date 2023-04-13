@@ -47,7 +47,13 @@ func (b *Broker) ReactMetadata(ctx *NetworkContext, req *codec.MetadataReq, conf
 			topicMetadata := codec.TopicMetadata{ErrorCode: 0, Topic: topic, IsInternal: false, TopicAuthorizedOperation: -2147483648}
 			topicMetadata.PartitionMetadataList = make([]*codec.PartitionMetadata, partitionNum)
 			for i := 0; i < partitionNum; i++ {
-				partitionMetadata := &codec.PartitionMetadata{ErrorCode: 0, PartitionId: i, LeaderId: config.NodeId, LeaderEpoch: 0, OfflineReplicas: nil}
+				partitionMetadata := &codec.PartitionMetadata{
+					ErrorCode:       0,
+					PartitionId:     i,
+					LeaderId:        config.NodeId,
+					LeaderEpoch:     0,
+					OfflineReplicas: nil,
+				}
 				replicas := make([]*codec.Replica, 1)
 				replicas[0] = &codec.Replica{ReplicaId: config.NodeId}
 				partitionMetadata.Replicas = replicas
