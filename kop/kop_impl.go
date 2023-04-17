@@ -1239,11 +1239,14 @@ func (b *Broker) DisconnectAction(addr net.Addr) {
 }
 
 func (b *Broker) Close() {
-	if err := b.offsetManager.GracefulSendOffsetMessages(b.consumerManager); err != nil {
-		logrus.Errorf("graceful send offset messages failed: %v", err)
+	// offsetManager create failed, will call broker.Close, cause nil pointer error
+	if b.offsetManager != nil {
+		if err := b.offsetManager.GracefulSendOffsetMessages(b.consumerManager); err != nil {
+			logrus.Errorf("graceful send offset messages failed: %v", err)
+		}
+		b.offsetManager.Close()
 	}
 	b.CloseServer()
-	b.offsetManager.Close()
 	b.mutex.Lock()
 	for key, value := range b.pulsarClientManage {
 		value.Close()
