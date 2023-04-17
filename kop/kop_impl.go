@@ -1192,6 +1192,27 @@ func (b *Broker) DisconnectAll() {
 		}
 
 		err := conn.Close()
+		if err != nil {
+			logrus.Errorf("conn closed failed :%v.", err.Error())
+		}
+	}
+}
+
+func (b *Broker) DisconnectByAddr(addr string) {
+	logrus.Infof("connection %s closed.", addr)
+
+	v, loaded := b.ConnMap.Load(addr)
+	if !loaded {
+		return
+	}
+
+	conn, ok := v.(net.Conn)
+	if !ok {
+		return
+	}
+
+	err := conn.Close()
+	if err != nil {
 		logrus.Errorf("conn closed failed :%v.", err.Error())
 	}
 }
