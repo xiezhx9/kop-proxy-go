@@ -1,7 +1,6 @@
 package kop
 
 import (
-	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/protocol-laboratory/kafka-codec-go/codec"
@@ -14,13 +13,12 @@ const sessionTimeoutMs = 30000
 
 type GroupCoordinatorMemory struct {
 	config       *Config
-	pulsarClient pulsar.Client
 	mutex        sync.RWMutex
 	groupManager map[string]*Group
 }
 
-func NewGroupCoordinatorMemory(config *Config, pulsarClient pulsar.Client) *GroupCoordinatorMemory {
-	coordinatorImpl := GroupCoordinatorMemory{config: config, pulsarClient: pulsarClient}
+func NewGroupCoordinatorMemory(config *Config) *GroupCoordinatorMemory {
+	coordinatorImpl := GroupCoordinatorMemory{config: config}
 	coordinatorImpl.groupManager = make(map[string]*Group)
 	return &coordinatorImpl
 }
@@ -62,16 +60,19 @@ func (g *GroupCoordinatorMemory) HandleJoinGroup(username, groupId, memberId, cl
 		}, nil
 	}
 
+	group.groupMemberLock.RLock()
 	numMember := g.getGroupMembersLen(group)
 	isMemberExist := g.checkMemberExist(group, memberId)
 	if !isMemberExist && g.config.MaxConsumersPerGroup > 0 && numMember >= g.config.MaxConsumersPerGroup {
 		logrus.Errorf("join group failed, exceed maximum number of members. groupId: %s, memberId: %s, current: %d, maxConsumersPerGroup: %d",
 			groupId, memberId, numMember, g.config.MaxConsumersPerGroup)
+		group.groupMemberLock.RUnlock()
 		return &codec.JoinGroupResp{
 			MemberId:  memberId,
 			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
 		}, nil
 	}
+	group.groupMemberLock.RUnlock()
 
 	if g.getGroupStatus(group) == Dead {
 		logrus.Errorf("join group failed, cause group status is dead. groupId: %s, memberId: %s", groupId, memberId)
@@ -451,7 +452,7 @@ func (g *GroupCoordinatorMemory) awaitingRebalance(group *Group, rebalanceTickMs
 			return nil
 		}
 		if time.Since(start).Milliseconds() >= int64(sessionTimeout) {
-			return errors.Errorf("relalance timeout")
+			return errors.Errorf("rebalance timeout")
 		}
 		time.Sleep(time.Duration(rebalanceTickMs) * time.Millisecond)
 	}
@@ -472,6 +473,10 @@ func (g *GroupCoordinatorMemory) getGroupGenerationId(group *Group) int {
 }
 
 func (g *GroupCoordinatorMemory) getGroupMembersLen(group *Group) int {
+	return len(group.members)
+}
+
+func (g *GroupCoordinatorMemory) getGroupMembersLenInLock(group *Group) int {
 	group.groupMemberLock.RLock()
 	groupMembersLen := len(group.members)
 	group.groupMemberLock.RUnlock()
@@ -643,7 +648,7 @@ func (g *GroupCoordinatorMemory) checkSyncMemberGenerationId(group *Group, membe
 
 func (g *GroupCoordinatorMemory) addNewMemberAndReBalance(group *Group, clientId, memberId, protocolType string, protocols []*codec.GroupProtocol) (string, error) {
 	group.groupNewMemberLock.Lock()
-	if g.getGroupMembersLen(group) > 0 && g.getGroupStatus(group) != Stable {
+	if g.getGroupMembersLenInLock(group) > 0 && g.getGroupStatus(group) != Stable {
 		logrus.Warnf("new member wait for stable, current group status is CompletingRebalance")
 		err := g.awaitingRebalance(group, g.config.RebalanceTickMs, sessionTimeoutMs, Stable)
 		// avoid new member joined before sync-consumer leaving the sync loop

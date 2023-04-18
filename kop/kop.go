@@ -192,7 +192,7 @@ func NewKop(impl Server, config *Config) (*Broker, error) {
 		}
 	}
 	if config.GroupCoordinatorType == GroupCoordinatorTypeMemory {
-		broker.groupCoordinator = NewGroupCoordinatorMemory(config, broker.pClient)
+		broker.groupCoordinator = NewGroupCoordinatorMemory(config)
 	} else if config.GroupCoordinatorType == GroupCoordinatorTypeRedis {
 		broker.groupCoordinator = NewGroupCoordinatorRedis(config.RedisConfig)
 	} else {
