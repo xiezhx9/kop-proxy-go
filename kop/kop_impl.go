@@ -930,7 +930,7 @@ func (b *Broker) OffsetFetchAction(addr net.Addr, topic, clientID, groupID strin
 	b.mutex.RUnlock()
 	if !exist {
 		b.mutex.Lock()
-		metadata := ConsumerMetadata{username: user.username, groupId: groupID, messageIds: list.New()}
+		metadata := PulsarConsumerHandle{username: user.username, groupId: groupID, messageIds: list.New()}
 		channel, consumer, err := b.createConsumer(partitionedTopic, subscriptionName, messageId, clientID)
 		if err != nil {
 			b.mutex.Unlock()

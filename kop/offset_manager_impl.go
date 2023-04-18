@@ -232,7 +232,7 @@ func (o *OffsetManagerImpl) RemoveOffsetWithKey(key string) {
 	logrus.Infof("remove offset success. key: %s, offset: %d", key, value.Offset)
 }
 
-func (o *OffsetManagerImpl) GracefulSendOffsetMessages(metadataMap map[string]*ConsumerMetadata) error {
+func (o *OffsetManagerImpl) GracefulSendOffsetMessages(metadataMap map[string]*PulsarConsumerHandle) error {
 	logrus.Infof("begin graceful send offset messages")
 	if len(o.offsetMap) == 0 {
 		logrus.Infof("offset map is empty")
@@ -267,7 +267,7 @@ func (o *OffsetManagerImpl) GracefulSendOffsetMessages(metadataMap map[string]*C
 	return nil
 }
 
-func (o *OffsetManagerImpl) GracefulSendOffsetMessage(key string, metadata *ConsumerMetadata) error {
+func (o *OffsetManagerImpl) GracefulSendOffsetMessage(key string, metadata *PulsarConsumerHandle) error {
 	if len(o.offsetMap) == 0 {
 		logrus.Infof("offset map is empty")
 		return nil

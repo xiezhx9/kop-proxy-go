@@ -157,7 +157,7 @@ type Broker struct {
 	pulsarClientManage map[string]pulsar.Client
 	groupCoordinator   GroupCoordinator
 	producerManager    map[string]pulsar.Producer
-	consumerManager    map[string]*ConsumerMetadata
+	consumerManager    map[string]*PulsarConsumerHandle
 	userInfoManager    map[string]*userInfo
 	memberManager      map[string]*MemberInfo
 	topicGroupManager  map[string]string
@@ -200,7 +200,7 @@ func NewKop(impl Server, config *Config) (*Broker, error) {
 	} else {
 		return nil, errors.Errorf("unexpect GroupCoordinatorType: %v", config.GroupCoordinatorType)
 	}
-	broker.consumerManager = make(map[string]*ConsumerMetadata)
+	broker.consumerManager = make(map[string]*PulsarConsumerHandle)
 	broker.userInfoManager = make(map[string]*userInfo)
 	broker.memberManager = make(map[string]*MemberInfo)
 	broker.pulsarClientManage = make(map[string]pulsar.Client)

@@ -13,9 +13,9 @@ type OffsetManager interface {
 
 	RemoveOffsetWithKey(key string)
 
-	GracefulSendOffsetMessages(map[string]*ConsumerMetadata) error
+	GracefulSendOffsetMessages(map[string]*PulsarConsumerHandle) error
 
-	GracefulSendOffsetMessage(string, *ConsumerMetadata) error
+	GracefulSendOffsetMessage(string, *PulsarConsumerHandle) error
 
 	GetOffsetMap() map[string]MessageIdPair
 
