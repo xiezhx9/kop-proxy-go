@@ -88,7 +88,7 @@ func (g *GroupCoordinatorMemory) HandleJoinGroup(username, groupId, memberId, cl
 				logrus.Errorf("member %s join group %s failed, cause: %s", memberId, groupId, err)
 				return &codec.JoinGroupResp{
 					MemberId:  memberId,
-					ErrorCode: codec.COORDINATOR_LOAD_IN_PROGRESS,
+					ErrorCode: codec.REBALANCE_IN_PROGRESS,
 				}, nil
 			}
 		}
@@ -100,7 +100,7 @@ func (g *GroupCoordinatorMemory) HandleJoinGroup(username, groupId, memberId, cl
 			}
 			return &codec.JoinGroupResp{
 				MemberId:  memberId,
-				ErrorCode: codec.COORDINATOR_LOAD_IN_PROGRESS,
+				ErrorCode: codec.REBALANCE_IN_PROGRESS,
 			}, nil
 		}
 		members := g.getLeaderMembers(group, memberId)
@@ -122,7 +122,7 @@ func (g *GroupCoordinatorMemory) HandleJoinGroup(username, groupId, memberId, cl
 				logrus.Errorf("member %s join group %s failed, cause: %s", memberId, groupId, err)
 				return &codec.JoinGroupResp{
 					MemberId:  memberId,
-					ErrorCode: codec.COORDINATOR_LOAD_IN_PROGRESS,
+					ErrorCode: codec.REBALANCE_IN_PROGRESS,
 				}, nil
 			}
 		} else {
@@ -133,7 +133,7 @@ func (g *GroupCoordinatorMemory) HandleJoinGroup(username, groupId, memberId, cl
 					logrus.Errorf("member %s join group %s failed, cause: %s", memberId, groupId, err)
 					return &codec.JoinGroupResp{
 						MemberId:  memberId,
-						ErrorCode: codec.COORDINATOR_LOAD_IN_PROGRESS,
+						ErrorCode: codec.REBALANCE_IN_PROGRESS,
 					}, nil
 				}
 			}
@@ -147,7 +147,7 @@ func (g *GroupCoordinatorMemory) HandleJoinGroup(username, groupId, memberId, cl
 			}
 			return &codec.JoinGroupResp{
 				MemberId:  memberId,
-				ErrorCode: codec.COORDINATOR_LOAD_IN_PROGRESS,
+				ErrorCode: codec.REBALANCE_IN_PROGRESS,
 			}, nil
 		}
 		return &codec.JoinGroupResp{
@@ -169,7 +169,7 @@ func (g *GroupCoordinatorMemory) HandleJoinGroup(username, groupId, memberId, cl
 				logrus.Errorf("member %s join group %s failed, cause: %s", memberId, groupId, err)
 				return &codec.JoinGroupResp{
 					MemberId:  memberId,
-					ErrorCode: codec.COORDINATOR_LOAD_IN_PROGRESS,
+					ErrorCode: codec.REBALANCE_IN_PROGRESS,
 				}, nil
 			}
 		} else {
@@ -179,7 +179,7 @@ func (g *GroupCoordinatorMemory) HandleJoinGroup(username, groupId, memberId, cl
 					logrus.Errorf("member %s join group %s failed, cause: %s", memberId, groupId, err)
 					return &codec.JoinGroupResp{
 						MemberId:  memberId,
-						ErrorCode: codec.COORDINATOR_LOAD_IN_PROGRESS,
+						ErrorCode: codec.REBALANCE_IN_PROGRESS,
 					}, nil
 				}
 			}
@@ -192,17 +192,13 @@ func (g *GroupCoordinatorMemory) HandleJoinGroup(username, groupId, memberId, cl
 			}
 			return &codec.JoinGroupResp{
 				MemberId:  memberId,
-				ErrorCode: codec.COORDINATOR_LOAD_IN_PROGRESS,
+				ErrorCode: codec.REBALANCE_IN_PROGRESS,
 			}, nil
 		}
 		members := g.getLeaderMembers(group, memberId)
-		var generationId int
-		group.groupLock.Lock()
-		generationId = group.generationId
-		group.groupLock.Unlock()
 		return &codec.JoinGroupResp{
 			ErrorCode:    codec.NONE,
-			GenerationId: generationId,
+			GenerationId: group.generationId,
 			ProtocolType: &group.protocolType,
 			ProtocolName: group.supportedProtocol,
 			LeaderId:     g.getMemberLeader(group),
@@ -232,7 +228,7 @@ func (g *GroupCoordinatorMemory) HandleSyncGroup(username, groupId, memberId str
 			ErrorCode: codec.INVALID_GROUP_ID,
 		}, nil
 	}
-	curMember, exist := group.members[memberId]
+	_, exist = group.members[memberId]
 	if !exist {
 		logrus.Errorf("sync group %s failed, cause invalid memberId %s", groupId, memberId)
 		return &codec.SyncGroupResp{
@@ -263,14 +259,14 @@ func (g *GroupCoordinatorMemory) HandleSyncGroup(username, groupId, memberId str
 			}
 		}
 		group.groupMemberLock.Lock()
-		curMember.syncGenerationId = curMember.joinGenerationId
+		group.members[memberId].syncGenerationId = group.members[memberId].joinGenerationId
 		group.groupMemberLock.Unlock()
 		err := g.awaitingSync(group, g.config.RebalanceTickMs, group.sessionTimeoutMs, memberId)
 		if g.isMemberLeader(group, memberId) {
 			g.setGroupStatus(group, Stable)
 		}
 		group.groupMemberLock.RLock()
-		curMemberAssignment := curMember.assignment
+		curMemberAssignment := group.members[memberId].assignment
 		group.groupMemberLock.RUnlock()
 		if err != nil {
 			logrus.Errorf("member %s sync group %s failed, cause: %s", memberId, groupId, err)
@@ -293,7 +289,7 @@ func (g *GroupCoordinatorMemory) HandleSyncGroup(username, groupId, memberId str
 	if g.getGroupStatus(group) == Stable {
 		return &codec.SyncGroupResp{
 			ErrorCode:        codec.NONE,
-			MemberAssignment: curMember.assignment,
+			MemberAssignment: group.members[memberId].assignment,
 		}, nil
 	}
 	return &codec.SyncGroupResp{
@@ -383,7 +379,7 @@ func (g *GroupCoordinatorMemory) updateMemberAndRebalance(group *Group, clientId
 
 func (g *GroupCoordinatorMemory) HandleHeartBeat(username, groupId, memberId string) *codec.HeartbeatResp {
 	if groupId == "" {
-		logrus.Errorf("groupId is empty.")
+		logrus.Errorf("member %s heartbeat but groupId is empty", memberId)
 		return &codec.HeartbeatResp{
 			ErrorCode: codec.INVALID_GROUP_ID,
 		}
@@ -393,7 +389,7 @@ func (g *GroupCoordinatorMemory) HandleHeartBeat(username, groupId, memberId str
 	if !exist {
 		g.mutex.RUnlock()
 		// the group will not exist when the broker restart, rebalance is required
-		logrus.Warningf("get group failed. cause group not exist, groupId: %s", groupId)
+		logrus.Warningf("member %s heartbeat but get group failed. cause group not exist, groupId: %s", memberId, groupId)
 		return &codec.HeartbeatResp{
 			ErrorCode: codec.REBALANCE_IN_PROGRESS,
 		}
@@ -403,14 +399,14 @@ func (g *GroupCoordinatorMemory) HandleHeartBeat(username, groupId, memberId str
 	group.groupMemberLock.RUnlock()
 	if !memberExist {
 		g.mutex.RUnlock()
-		logrus.Warningf("get member failed. cause member not exist, groupId: %s, memberId: %s", groupId, memberId)
+		logrus.Warningf("member %s heartbeat but member not exist, groupId: %s", memberId, groupId)
 		return &codec.HeartbeatResp{
 			ErrorCode: codec.REBALANCE_IN_PROGRESS,
 		}
 	}
 	g.mutex.RUnlock()
 	if g.getGroupStatus(group) == PreparingRebalance || g.getGroupStatus(group) == CompletingRebalance || g.getGroupStatus(group) == Dead {
-		logrus.Infof("preparing rebalance. groupId: %s", groupId)
+		logrus.Infof("member %s preparing rebalance. groupId: %s", memberId, groupId)
 		return &codec.HeartbeatResp{
 			ErrorCode: codec.REBALANCE_IN_PROGRESS,
 		}
@@ -451,7 +447,7 @@ func (g *GroupCoordinatorMemory) vote(group *Group, protocols []*codec.GroupProt
 func (g *GroupCoordinatorMemory) awaitingRebalance(group *Group, rebalanceTickMs int, sessionTimeout int, waitForStatus GroupStatus) error {
 	start := time.Now()
 	for {
-		if g.getGroupStatus(group) == waitForStatus || g.getGroupMembersLen(group) == 0 {
+		if g.getGroupStatus(group) == waitForStatus {
 			return nil
 		}
 		if time.Since(start).Milliseconds() >= int64(sessionTimeout) {
@@ -590,13 +586,9 @@ func (g *GroupCoordinatorMemory) awaitingJoin(group *Group, memberId string, reb
 	start := time.Now()
 	for {
 		groupGenerationId := g.getGroupGenerationId(group)
-		curMember := group.members[memberId]
-		if curMember == nil {
-			return errors.Errorf("cur member missing when awaitingJoin.")
-		}
 		group.groupMemberLock.Lock()
-		if curMember.joinGenerationId != groupGenerationId {
-			curMember.joinGenerationId = groupGenerationId
+		if group.members[memberId].joinGenerationId != groupGenerationId {
+			group.members[memberId].joinGenerationId = groupGenerationId
 		}
 		group.groupMemberLock.Unlock()
 		if g.checkJoinMemberGenerationId(group, memberId) {
