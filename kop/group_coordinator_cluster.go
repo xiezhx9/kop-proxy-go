@@ -1,8 +1,10 @@
 package kop
 
 import (
+	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/protocol-laboratory/kafka-codec-go/codec"
+	"github.com/sirupsen/logrus"
 )
 
 type GroupForRedis struct {
@@ -31,8 +33,12 @@ type GroupCoordinatorRedis struct {
 	redisdb      redis.Cmdable
 }
 
-func NewGroupCoordinatorRedis(redisConfig RedisConfig) *GroupCoordinatorRedis {
+func NewGroupCoordinatorRedis(redisConfig RedisConfig) (*GroupCoordinatorRedis, error) {
 	g := &GroupCoordinatorRedis{}
+	if len(redisConfig.Addr) == 0 {
+		logrus.Errorf("redis address empty")
+		return g, fmt.Errorf("redis address empty")
+	}
 	g.groupManager = make(map[string]*Group)
 	var redisdb redis.Cmdable
 	if redisConfig.RedisType == RedisCluster {
@@ -47,7 +53,7 @@ func NewGroupCoordinatorRedis(redisConfig RedisConfig) *GroupCoordinatorRedis {
 		})
 	}
 	g.redisdb = redisdb
-	return g
+	return g, nil
 }
 
 func (gcc *GroupCoordinatorRedis) HandleJoinGroup(username, groupId, memberId, clientId, protocolType string, sessionTimeoutMs int,

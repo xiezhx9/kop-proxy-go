@@ -355,9 +355,9 @@ func (g *GroupCoordinatorMemory) addMemberAndRebalance(group *Group, clientId, m
 	if memberId == EmptyMemberId {
 		memberId = clientId + "-" + uuid.New().String()
 	}
-	protocolMap := make(map[string][]byte)
+	protocolMap := make(map[string]string)
 	for i := range protocols {
-		protocolMap[protocols[i].ProtocolName] = protocols[i].ProtocolMetadata
+		protocolMap[protocols[i].ProtocolName] = string(protocols[i].ProtocolMetadata)
 	}
 	if g.getGroupStatus(group) == Empty {
 		g.vote(group, protocols)
@@ -576,7 +576,7 @@ func (g *GroupCoordinatorMemory) getLeaderMembers(group *Group, memberId string)
 	}
 	if g.isMemberLeader(group, memberId) {
 		for _, member := range group.members {
-			members = append(members, &codec.Member{MemberId: member.memberId, GroupInstanceId: nil, Metadata: member.metadata})
+			members = append(members, &codec.Member{MemberId: member.memberId, GroupInstanceId: nil, Metadata: []byte(member.metadata)})
 		}
 	}
 	return members
