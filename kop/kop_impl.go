@@ -36,9 +36,11 @@ func (b *Broker) ConnectionClosed(conn *knet.Conn) {
 	if err := conn.Close(); err != nil {
 		logrus.Errorf("close connection %s failed: %s", conn.RemoteAddr(), err.Error())
 	}
-	b.ConnMap.Delete(conn.RemoteAddr())
-	b.SaslMap.Delete(conn.RemoteAddr())
-	atomic.AddInt32(&b.connCount, -1)
+	_, exists := b.ConnMap.LoadAndDelete(conn.RemoteAddr())
+	if exists {
+		b.SaslMap.Delete(conn.RemoteAddr())
+		atomic.AddInt32(&b.connCount, -1)
+	}
 }
 
 func (b *Broker) AcceptError(conn *knet.Conn, err error) {
