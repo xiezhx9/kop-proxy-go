@@ -160,25 +160,27 @@ func (o *OffsetManagerImpl) CommitOffset(username, kafkaTopic, groupId string, p
 	o.offsetMap[key] = pair
 	o.mutex.Unlock()
 
-	if o.offsetRateLimiter != nil && o.offsetRateLimiter.Acquire(key) {
-		data := model.MessageIdData{}
-		data.MessageId = pair.MessageId.Serialize()
-		data.Offset = pair.Offset
-		marshal, err := json.Marshal(data)
-		if err != nil {
-			logrus.Errorf("convert msg to bytes failed. kafkaTopic: %s, err: %s", kafkaTopic, err)
-			return err
-		}
-		message := pulsar.ProducerMessage{}
-		message.Payload = marshal
-		message.Key = key
-		_, err = o.producer.Send(context.TODO(), &message)
-		if err != nil {
-			logrus.Errorf("commit offset failed. kafkaTopic: %s, offset: %d, err: %s", kafkaTopic, pair.Offset, err)
-			return err
-		}
-		logrus.Infof("kafkaTopic: %s commit offset %d success", kafkaTopic, pair.Offset)
+	if o.offsetRateLimiter != nil && !o.offsetRateLimiter.Acquire(key) {
+		return nil
 	}
+
+	data := model.MessageIdData{}
+	data.MessageId = pair.MessageId.Serialize()
+	data.Offset = pair.Offset
+	marshal, err := json.Marshal(data)
+	if err != nil {
+		logrus.Errorf("convert msg to bytes failed. kafkaTopic: %s, err: %s", kafkaTopic, err)
+		return err
+	}
+	message := pulsar.ProducerMessage{}
+	message.Payload = marshal
+	message.Key = key
+	_, err = o.producer.Send(context.TODO(), &message)
+	if err != nil {
+		logrus.Errorf("commit offset failed. kafkaTopic: %s, offset: %d, err: %s", kafkaTopic, pair.Offset, err)
+		return err
+	}
+	logrus.Infof("kafkaTopic: %s commit offset %d success", kafkaTopic, pair.Offset)
 	return nil
 }
 
