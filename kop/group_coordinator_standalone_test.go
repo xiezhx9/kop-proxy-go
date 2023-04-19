@@ -75,6 +75,18 @@ func newMemberMetadata(memberId string) *memberMetadata {
 }
 
 func TestConcurrentJoinLeaveAndRebalance(t *testing.T) {
+	testConcurrentJoinLeaveAndRebalance(t, 0)
+}
+
+func TestConcurrentJoinLeaveAndRebalance10Ms(t *testing.T) {
+	testConcurrentJoinLeaveAndRebalance(t, 10)
+}
+
+func TestConcurrentJoinLeaveAndRebalance50Ms(t *testing.T) {
+	testConcurrentJoinLeaveAndRebalance(t, 50)
+}
+
+func testConcurrentJoinLeaveAndRebalance(t *testing.T, consumerPeriod time.Duration) {
 	config := &Config{
 		MaxConsumersPerGroup: 5,
 		RebalanceTickMs:      500,

@@ -326,7 +326,7 @@ func (g *GroupCoordinatorMemory) HandleLeaveGroup(username, groupId string,
 	group.groupLock.Lock()
 	group.generationId++
 	group.groupLock.Unlock()
-	if len(group.members) == 0 {
+	if g.getGroupMembersLenInLock(group) == 0 {
 		g.setGroupStatus(group, Empty)
 	} else {
 		// any member leave group should do rebalance
