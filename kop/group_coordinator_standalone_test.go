@@ -79,11 +79,11 @@ func TestConcurrentJoinLeaveAndRebalance(t *testing.T) {
 }
 
 func TestConcurrentJoinLeaveAndRebalance10Ms(t *testing.T) {
-	testConcurrentJoinLeaveAndRebalance(t, 10)
+	testConcurrentJoinLeaveAndRebalance(t, 10*time.Millisecond)
 }
 
 func TestConcurrentJoinLeaveAndRebalance50Ms(t *testing.T) {
-	testConcurrentJoinLeaveAndRebalance(t, 50)
+	testConcurrentJoinLeaveAndRebalance(t, 50*time.Millisecond)
 }
 
 func testConcurrentJoinLeaveAndRebalance(t *testing.T, consumerPeriod time.Duration) {
@@ -117,6 +117,7 @@ func testConcurrentJoinLeaveAndRebalance(t *testing.T, consumerPeriod time.Durat
 			clientID := clientIDPrefix + strconv.Itoa(i)
 			joinWaitLeave(coordinator, groupID, memberID, clientID, waitTimeMs)
 		}(i)
+		time.Sleep(consumerPeriod)
 	}
 
 	wg.Wait()
