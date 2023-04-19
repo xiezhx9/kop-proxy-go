@@ -88,19 +88,25 @@ func TestConcurrentJoinLeaveAndRebalance50Ms(t *testing.T) {
 
 func testConcurrentJoinLeaveAndRebalance(t *testing.T, consumerPeriod time.Duration) {
 	config := &Config{
-		MaxConsumersPerGroup: 5,
-		RebalanceTickMs:      500,
+		MaxConsumersPerGroup:     5,
+		RebalanceTickMs:          500,
+		GroupMaxSessionTimeoutMs: 5000,
 	}
 	coordinator := NewGroupCoordinatorMemory(config)
 
 	groupID := "testGroup"
 	memberIDPrefix := "testMember"
 	clientIDPrefix := "testClient"
+	userNamePrefix := "testUserName"
 
 	coordinator.groupManager[groupID] = &Group{
-		groupId:   groupID,
-		members:   make(map[string]*memberMetadata),
-		groupLock: sync.RWMutex{},
+		groupId:      groupID,
+		members:      make(map[string]*memberMetadata),
+		groupLock:    sync.RWMutex{},
+		protocolType: "testProtocol",
+		groupStatus:  Empty,
+		canRebalance: true,
+		generationId: 1,
 	}
 
 	numMembers := 10
@@ -115,7 +121,8 @@ func testConcurrentJoinLeaveAndRebalance(t *testing.T, consumerPeriod time.Durat
 			defer wg.Done()
 			memberID := memberIDPrefix + strconv.Itoa(i)
 			clientID := clientIDPrefix + strconv.Itoa(i)
-			joinWaitLeave(coordinator, groupID, memberID, clientID, waitTimeMs)
+			userName := userNamePrefix + strconv.Itoa(i)
+			joinWaitLeave(coordinator, userName, groupID, memberID, clientID, waitTimeMs)
 		}(i)
 		time.Sleep(consumerPeriod)
 	}
@@ -139,9 +146,9 @@ func testConcurrentJoinLeaveAndRebalance(t *testing.T, consumerPeriod time.Durat
 	}
 }
 
-func joinWaitLeave(coordinator *GroupCoordinatorMemory, groupID, memberID, clientID string, waitTimeMs int) {
+func joinWaitLeave(coordinator *GroupCoordinatorMemory, userName, groupID, memberID, clientID string, waitTimeMs int) {
 	protocolType := "testProtocol"
-	sessionTimeoutMs := 5000
+	sessionTimeoutMs := coordinator.config.GroupMaxSessionTimeoutMs
 	protocols := []*codec.GroupProtocol{
 		{
 			ProtocolName:     protocolType,
@@ -150,9 +157,22 @@ func joinWaitLeave(coordinator *GroupCoordinatorMemory, groupID, memberID, clien
 	}
 
 	// Handle join
-	_, err := coordinator.HandleJoinGroup("", groupID, memberID, clientID, protocolType, sessionTimeoutMs, protocols)
+	_, err := coordinator.HandleJoinGroup(userName, groupID, memberID, clientID, protocolType, sessionTimeoutMs, protocols)
 	if err != nil {
 		log.Printf("Error while joining group: %v", err)
+		return
+	}
+
+	// sync
+	assignment := []*codec.GroupAssignment{
+		{
+			MemberId: memberID,
+		},
+	}
+
+	_, err = coordinator.HandleSyncGroup(userName, groupID, memberID, 1, assignment)
+	if err != nil {
+		log.Printf("Error while sync group: %v", err)
 		return
 	}
 
@@ -166,7 +186,7 @@ func joinWaitLeave(coordinator *GroupCoordinatorMemory, groupID, memberID, clien
 		},
 	}
 
-	_, err = coordinator.HandleLeaveGroup("", groupID, members)
+	_, err = coordinator.HandleLeaveGroup(userName, groupID, members)
 	if err != nil {
 		log.Printf("Error while leaving group: %v", err)
 		return
