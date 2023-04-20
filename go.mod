@@ -9,7 +9,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
-	github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230413152631-ed6f29a71c62
+	github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230420012411-46921c9a61ca
 	github.com/protocol-laboratory/pulsar-admin-go v0.0.0-20230406114908-e3c9f0d4bd4b
 	github.com/protocol-laboratory/pulsar-codec-go v0.0.0-20230316133629-dcbd34f20ab7
 	github.com/sirupsen/logrus v1.9.0

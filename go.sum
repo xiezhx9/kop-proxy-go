@@ -309,8 +309,8 @@ github.com/prometheus/procfs v0.6.0/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1
 github.com/prometheus/procfs v0.7.3/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1xBZuNvfVA=
 github.com/prometheus/procfs v0.8.0 h1:ODq8ZFEaYeCaZOJlZZdJA2AbQR98dSHSM1KW/You5mo=
 github.com/prometheus/procfs v0.8.0/go.mod h1:z7EfXMXOkbkqb9IINtpCn86r/to3BnA0uaxHdg830/4=
-github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230413152631-ed6f29a71c62 h1:9Rfoo6QWsPerFretmNaM4IJaG92TWUdg/AfE+HkfDkQ=
-github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230413152631-ed6f29a71c62/go.mod h1:C1ani0++x7KssL1UDUqTLw40cfdc88vY8q+OdqM2Xqg=
+github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230420012411-46921c9a61ca h1:+E+LPpb2PyXvz0zyBXJoQ3zWXH9a62I9HhrH0JKTYV0=
+github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230420012411-46921c9a61ca/go.mod h1:C1ani0++x7KssL1UDUqTLw40cfdc88vY8q+OdqM2Xqg=
 github.com/protocol-laboratory/pulsar-admin-go v0.0.0-20230406114908-e3c9f0d4bd4b h1:BHqGGFYbQZ7yWHMgRwTNYyZbDPp10iPmYvrYigDbOE4=
 github.com/protocol-laboratory/pulsar-admin-go v0.0.0-20230406114908-e3c9f0d4bd4b/go.mod h1:o/wSrUD5QEJOj4cNwoD7/FaBuSkB2tolSwpiw5un1O8=
 github.com/protocol-laboratory/pulsar-codec-go v0.0.0-20230316133629-dcbd34f20ab7 h1:vTKhGeHS/zteaDUW2gZ5oW/v2VWSYWuiDNfHlSgGLQs=
