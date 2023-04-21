@@ -1182,6 +1182,7 @@ func (b *Broker) HeartBeatAction(addr net.Addr, req codec.HeartbeatReq) *codec.H
 
 func (b *Broker) DisconnectAll() {
 	logrus.Info("connection all closed.")
+
 	for addr := range b.producerManager {
 		v, loaded := b.ConnMap.Load(addr)
 		if !loaded {
@@ -1200,22 +1201,49 @@ func (b *Broker) DisconnectAll() {
 	}
 }
 
-func (b *Broker) DisconnectByAddr(addr string) {
-	logrus.Infof("connection %s closed.", addr)
+func (b *Broker) DisconnectAllLocalAddr(localAddr string) {
+	logrus.Infof("connection all local addr %s closed.", localAddr)
 
-	v, loaded := b.ConnMap.Load(addr)
-	if !loaded {
-		return
+	for addr := range b.producerManager {
+		v, loaded := b.ConnMap.Load(addr)
+		if !loaded {
+			continue
+		}
+
+		conn, ok := v.(net.Conn)
+		if !ok {
+			continue
+		}
+
+		if conn.LocalAddr().String() != localAddr {
+			continue
+		}
+
+		err := conn.Close()
+		if err != nil {
+			logrus.Errorf("conn closed failed :%v.", err.Error())
+		}
 	}
+}
 
-	conn, ok := v.(net.Conn)
-	if !ok {
-		return
-	}
+func (b *Broker) DisconnectRemoteAddr(addrList []string) {
+	logrus.Infof("connection remote addr closed : %v.", addrList)
 
-	err := conn.Close()
-	if err != nil {
-		logrus.Errorf("conn closed failed :%v.", err.Error())
+	for _, addr := range addrList {
+		v, loaded := b.ConnMap.Load(addr)
+		if !loaded {
+			continue
+		}
+
+		conn, ok := v.(net.Conn)
+		if !ok {
+			continue
+		}
+
+		err := conn.Close()
+		if err != nil {
+			logrus.Errorf("conn closed failed :%v.", err.Error())
+		}
 	}
 }
 
