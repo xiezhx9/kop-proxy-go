@@ -749,6 +749,7 @@ func (b *Broker) OffsetListPartitionAction(addr net.Addr, topic, clientID string
 					ErrorCode:   codec.UNKNOWN_SERVER_ERROR,
 				}, nil
 			}
+			logrus.Infof("kafka topic previouse message id: %s, topic: %s when trigger offset list partition action", lastedMsg.ID(), partitionedTopic)
 			offset = convOffset(lastedMsg, b.config.ContinuousOffset) + 1
 		}
 	}
@@ -868,6 +869,7 @@ func (b *Broker) createConsumer(partitionedTopic string, subscriptionName string
 			consumer.Close()
 			return nil, nil, err
 		}
+		logrus.Infof("kafka topic previouse message id: %s, topic: %s", messageId, partitionedTopic)
 	}
 	logrus.Infof("create consumer success, topic: %s, subscription name: %s", partitionedTopic, subscriptionName)
 	return channel, consumer, nil
