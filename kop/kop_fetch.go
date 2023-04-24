@@ -26,27 +26,23 @@ func (b *Broker) ReactFetch(ctx *NetworkContext, req *codec.FetchReq) (*codec.Fe
 	for i, lowTopicResp := range lowTopicRespList {
 		for _, p := range lowTopicResp.PartitionRespList {
 			if p.RecordBatch != nil {
-				p.RecordBatch = b.convertRecordBatchResp(p.RecordBatch)
+				p.RecordBatch = &codec.RecordBatch{
+					Offset:          p.RecordBatch.Offset,
+					MessageSize:     p.RecordBatch.MessageSize,
+					LeaderEpoch:     p.RecordBatch.LeaderEpoch,
+					MagicByte:       2,
+					Flags:           0,
+					LastOffsetDelta: p.RecordBatch.LastOffsetDelta,
+					FirstTimestamp:  p.RecordBatch.FirstTimestamp,
+					LastTimestamp:   p.RecordBatch.LastTimestamp,
+					ProducerId:      -1,
+					ProducerEpoch:   -1,
+					BaseSequence:    p.RecordBatch.BaseSequence,
+					Records:         p.RecordBatch.Records,
+				}
 			}
 		}
 		resp.TopicRespList[i] = lowTopicResp
 	}
 	return resp, nil
-}
-
-func (b *Broker) convertRecordBatchResp(lowRecordBatch *codec.RecordBatch) *codec.RecordBatch {
-	return &codec.RecordBatch{
-		Offset:          lowRecordBatch.Offset,
-		MessageSize:     lowRecordBatch.MessageSize,
-		LeaderEpoch:     lowRecordBatch.LeaderEpoch,
-		MagicByte:       2,
-		Flags:           0,
-		LastOffsetDelta: lowRecordBatch.LastOffsetDelta,
-		FirstTimestamp:  lowRecordBatch.FirstTimestamp,
-		LastTimestamp:   lowRecordBatch.LastTimestamp,
-		ProducerId:      -1,
-		ProducerEpoch:   -1,
-		BaseSequence:    lowRecordBatch.BaseSequence,
-		Records:         lowRecordBatch.Records,
-	}
 }

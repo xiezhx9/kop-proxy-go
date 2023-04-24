@@ -17,11 +17,15 @@ type Config struct {
 	NetConfig    knet.KafkaNetServerConfig
 	RedisConfig  RedisConfig
 
-	ClusterId                string
-	NodeId                   int32
-	AdvertiseHost            string
-	AdvertisePort            int
-	NeedSasl                 bool
+	ClusterId     string
+	NodeId        int32
+	AdvertiseHost string
+	AdvertisePort int
+
+	NeedSasl            bool
+	ContinuousOffset    bool
+	RecordHeaderSupport bool
+
 	MaxConn                  int32
 	MaxConsumersPerGroup     int
 	GroupMinSessionTimeoutMs int
@@ -30,7 +34,6 @@ type Config struct {
 	MaxFetchRecord           int
 	MinFetchWaitMs           int
 	MaxFetchWaitMs           int
-	ContinuousOffset         bool
 	MaxProducerRecordSize    int
 	MaxBatchSize             int
 	// PulsarTenant use for kafsar internal

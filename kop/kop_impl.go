@@ -531,9 +531,18 @@ OUT:
 			baseOffset = offset
 		}
 		relativeOffset := offset - baseOffset
-		record := codec.Record{
-			Value:          message.Payload(),
-			RelativeOffset: int(relativeOffset),
+		var record codec.Record
+		if b.config.RecordHeaderSupport {
+			record = codec.Record{
+				Value:          message.Payload(),
+				RelativeOffset: int(relativeOffset),
+				Headers:        utils.ConvertMap2Headers(message.Properties()),
+			}
+		} else {
+			record = codec.Record{
+				Value:          message.Payload(),
+				RelativeOffset: int(relativeOffset),
+			}
 		}
 		recordBatch.Records = append(recordBatch.Records, &record)
 		consumerMetadata.mutex.Lock()
