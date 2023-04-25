@@ -2,6 +2,7 @@ package kop
 
 import (
 	"fmt"
+	"github.com/Shoothzj/gox/set"
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/pkg/errors"
 	"github.com/protocol-laboratory/kafka-codec-go/codec"
@@ -56,6 +57,9 @@ type Config struct {
 
 	// TopicLevelMetricsDisable if true, disable topic level metrics
 	TopicLevelMetricsDisable bool
+
+	DebugKafkaTopicSet  set.Set[string]
+	DebugPulsarTopicSet set.Set[string]
 }
 
 type PulsarConfig struct {
@@ -168,6 +172,12 @@ type Broker struct {
 }
 
 func NewKop(impl Server, config *Config) (*Broker, error) {
+	if config.DebugKafkaTopicSet == nil {
+		config.DebugKafkaTopicSet = set.Set[string]{}
+	}
+	if config.DebugPulsarTopicSet == nil {
+		config.DebugPulsarTopicSet = set.Set[string]{}
+	}
 	broker := &Broker{server: impl, config: config}
 	pulsarUrl := fmt.Sprintf("pulsar://%s:%d", config.PulsarConfig.Host, config.PulsarConfig.TcpPort)
 	var err error
