@@ -1199,6 +1199,24 @@ func (b *Broker) HeartBeatAction(addr net.Addr, req codec.HeartbeatReq) *codec.H
 	return resp
 }
 
+func (b *Broker) ProducePulsarProducerSize() int {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+	return len(b.producerManager)
+}
+
+func (b *Broker) ConsumePulsarClientSize() int {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+	return len(b.pulsarClientManage)
+}
+
+func (b *Broker) ConsumePulsarConsumerSize() int {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+	return len(b.consumerManager)
+}
+
 func (b *Broker) DisconnectAll() {
 	logrus.Info("connection all closed.")
 
