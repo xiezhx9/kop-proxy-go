@@ -606,7 +606,7 @@ func (b *Broker) GroupJoinAction(addr net.Addr, req *codec.JoinGroupReq) (*codec
 		clientId:        req.ClientId,
 	}
 	b.mutex.Lock()
-	b.memberManager[addr.String()] = &memberInfo
+	b.memberManager[addr] = &memberInfo
 	b.mutex.Unlock()
 	return joinGroupResp, nil
 }
@@ -1286,7 +1286,7 @@ func (b *Broker) DisconnectAction(addr net.Addr) {
 		return
 	}
 	b.mutex.RLock()
-	memberInfo, exist := b.memberManager[addr.String()]
+	memberInfo, exist := b.memberManager[addr]
 	producer, producerExist := b.producerManager[addr]
 	b.mutex.RUnlock()
 	if producerExist {

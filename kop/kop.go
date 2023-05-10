@@ -123,7 +123,7 @@ type Broker struct {
 	producerManager    map[net.Addr]pulsar.Producer
 	consumerManager    map[string]*PulsarConsumerHandle
 	userInfoManager    map[net.Addr]*userInfo
-	memberManager      map[string]*MemberInfo
+	memberManager      map[net.Addr]*MemberInfo
 	topicGroupManager  map[string]string
 	offsetManager      OffsetManager
 }
@@ -172,7 +172,7 @@ func NewKop(impl Server, config *Config) (*Broker, error) {
 	}
 	broker.consumerManager = make(map[string]*PulsarConsumerHandle)
 	broker.userInfoManager = make(map[net.Addr]*userInfo)
-	broker.memberManager = make(map[string]*MemberInfo)
+	broker.memberManager = make(map[net.Addr]*MemberInfo)
 	broker.pulsarClientManage = make(map[string]pulsar.Client)
 	broker.topicGroupManager = make(map[string]string)
 	broker.producerManager = make(map[net.Addr]pulsar.Producer)
