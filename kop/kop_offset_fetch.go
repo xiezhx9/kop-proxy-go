@@ -19,7 +19,7 @@ func (b *Broker) OffsetFetchVersion(ctx *NetworkContext, req *codec.OffsetFetchR
 		TopicRespList: make([]*codec.OffsetFetchTopicResp, len(req.TopicReqList)),
 	}
 	for i, topicReq := range req.TopicReqList {
-		if !b.authGroupTopic(topicReq.Topic, req.GroupId) {
+		if !b.server.AuthGroupTopic(topicReq.Topic, req.GroupId) {
 			return nil, fmt.Errorf("auth group topic failed, topic: %s, group: %s", topicReq.Topic, req.GroupId)
 		}
 		if !b.checkSaslTopic(ctx, topicReq.Topic, constant.ConsumerPermissionType) {

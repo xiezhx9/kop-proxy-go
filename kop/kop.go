@@ -9,6 +9,7 @@ import (
 	"github.com/protocol-laboratory/kafka-codec-go/knet"
 	"github.com/protocol-laboratory/pulsar-admin-go/padmin"
 	"github.com/sirupsen/logrus"
+	"net"
 	"sync"
 )
 
@@ -86,8 +87,10 @@ type Server interface {
 
 	AuthTopic(username string, password, clientId, topic, permissionType string) (bool, error)
 
+	// AuthTopicGroup check if group is valid
 	AuthTopicGroup(username string, password, clientId, consumerGroup string) (bool, error)
 
+	// AuthGroupTopic check if group has permission on topic
 	AuthGroupTopic(topic, groupId string) bool
 
 	SubscriptionName(groupId string) (string, error)
@@ -117,9 +120,9 @@ type Broker struct {
 	mutex              sync.RWMutex
 	pulsarClientManage map[string]pulsar.Client
 	groupCoordinator   GroupCoordinator
-	producerManager    map[string]pulsar.Producer
+	producerManager    map[net.Addr]pulsar.Producer
 	consumerManager    map[string]*PulsarConsumerHandle
-	userInfoManager    map[string]*userInfo
+	userInfoManager    map[net.Addr]*userInfo
 	memberManager      map[string]*MemberInfo
 	topicGroupManager  map[string]string
 	offsetManager      OffsetManager
@@ -168,11 +171,11 @@ func NewKop(impl Server, config *Config) (*Broker, error) {
 		return nil, errors.Errorf("unexpect GroupCoordinatorType: %v", config.GroupCoordinatorType)
 	}
 	broker.consumerManager = make(map[string]*PulsarConsumerHandle)
-	broker.userInfoManager = make(map[string]*userInfo)
+	broker.userInfoManager = make(map[net.Addr]*userInfo)
 	broker.memberManager = make(map[string]*MemberInfo)
 	broker.pulsarClientManage = make(map[string]pulsar.Client)
 	broker.topicGroupManager = make(map[string]string)
-	broker.producerManager = make(map[string]pulsar.Producer)
+	broker.producerManager = make(map[net.Addr]pulsar.Producer)
 	broker.knetServer, err = knet.NewKafkaNetServer(config.NetConfig, broker)
 	if err != nil {
 		logrus.Errorf("start failed: %v", err)
@@ -228,10 +231,6 @@ func (b *Broker) checkSasl(ctx *NetworkContext) bool {
 	}
 	_, ok := b.SaslMap.Load(ctx.Addr)
 	return ok
-}
-
-func (b *Broker) authGroupTopic(topic, groupId string) bool {
-	return b.AuthGroupTopicAction(topic, groupId)
 }
 
 func (b *Broker) checkSaslGroup(ctx *NetworkContext, groupId string) bool {

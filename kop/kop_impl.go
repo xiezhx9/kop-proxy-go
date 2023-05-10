@@ -383,7 +383,7 @@ func (b *Broker) SyncGroup(conn *knet.Conn, req *codec.SyncGroupReq) (*codec.Syn
 
 func (b *Broker) PartitionNumAction(addr net.Addr, topic string) (int, error) {
 	b.mutex.RLock()
-	user, exist := b.userInfoManager[addr.String()]
+	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
 		logrus.Errorf("get partitionNum failed. user is not found. topic: %s", topic)
@@ -399,7 +399,7 @@ func (b *Broker) PartitionNumAction(addr net.Addr, topic string) (int, error) {
 
 func (b *Broker) TopicListAction(addr net.Addr) ([]string, error) {
 	b.mutex.RLock()
-	user, exist := b.userInfoManager[addr.String()]
+	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
 		logrus.Errorf("get topics list failed. user not found. addr: %s", addr.String())
@@ -451,7 +451,7 @@ func (b *Broker) partitionedTopic(user *userInfo, kafkaTopic string, partitionId
 func (b *Broker) FetchPartition(addr net.Addr, kafkaTopic, clientID string, req *codec.FetchPartitionReq, maxBytes int, minBytes int, maxWaitMs int) (*codec.FetchPartitionResp, error) {
 	start := time.Now()
 	b.mutex.RLock()
-	user, exist := b.userInfoManager[addr.String()]
+	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	records := make([]*codec.Record, 0)
 	recordBatch := codec.RecordBatch{Records: records}
@@ -578,7 +578,7 @@ OUT:
 
 func (b *Broker) GroupJoinAction(addr net.Addr, req *codec.JoinGroupReq) (*codec.JoinGroupResp, error) {
 	b.mutex.RLock()
-	user, exist := b.userInfoManager[addr.String()]
+	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
 		logrus.Errorf("username not found in join group: %s", req.GroupId)
@@ -613,7 +613,7 @@ func (b *Broker) GroupJoinAction(addr net.Addr, req *codec.JoinGroupReq) (*codec
 
 func (b *Broker) GroupLeaveAction(addr net.Addr, req *codec.LeaveGroupReq) (*codec.LeaveGroupResp, error) {
 	b.mutex.RLock()
-	user, exist := b.userInfoManager[addr.String()]
+	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
 		logrus.Errorf("username not found in leave group: %s", req.GroupId)
@@ -664,7 +664,7 @@ func (b *Broker) GroupLeaveAction(addr net.Addr, req *codec.LeaveGroupReq) (*cod
 
 func (b *Broker) GroupSyncAction(addr net.Addr, req *codec.SyncGroupReq) (*codec.SyncGroupResp, error) {
 	b.mutex.RLock()
-	user, exist := b.userInfoManager[addr.String()]
+	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
 		logrus.Errorf("username not found in sync group: %s", req.GroupId)
@@ -687,7 +687,7 @@ func (b *Broker) GroupSyncAction(addr net.Addr, req *codec.SyncGroupReq) (*codec
 
 func (b *Broker) OffsetListPartitionAction(addr net.Addr, topic, clientID string, req *codec.ListOffsetsPartition) (*codec.ListOffsetsPartitionResp, error) {
 	b.mutex.RLock()
-	user, exist := b.userInfoManager[addr.String()]
+	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
 		logrus.Errorf("offset list failed when get username by addr %s, kafka topic: %s", addr.String(), topic)
@@ -779,7 +779,7 @@ func (b *Broker) OffsetListPartitionAction(addr net.Addr, topic, clientID string
 
 func (b *Broker) OffsetCommitPartitionAction(addr net.Addr, topic, clientID string, req *codec.OffsetCommitPartitionReq) (*codec.OffsetCommitPartitionResp, error) {
 	b.mutex.RLock()
-	user, exist := b.userInfoManager[addr.String()]
+	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
 		logrus.Errorf("offset commit failed when get userinfo by addr %s, kafka topic: %s", addr.String(), topic)
@@ -903,7 +903,7 @@ func (b *Broker) checkPartitionTopicExist(topics []string, partitionTopic string
 
 func (b *Broker) OffsetFetchAction(addr net.Addr, topic, clientID, groupID string, req *codec.OffsetFetchPartitionReq) (*codec.OffsetFetchPartitionResp, error) {
 	b.mutex.RLock()
-	user, exist := b.userInfoManager[addr.String()]
+	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
 		logrus.Errorf("offset fetch failed when get userinfo by addr %s, kafka topic: %s", addr.String(), topic)
@@ -982,7 +982,7 @@ func (b *Broker) OffsetFetchAction(addr net.Addr, topic, clientID, groupID strin
 
 func (b *Broker) OffsetLeaderEpochAction(addr net.Addr, topic string, req *codec.OffsetLeaderEpochPartitionReq) (*codec.OffsetForLeaderEpochPartitionResp, error) {
 	b.mutex.RLock()
-	user, exist := b.userInfoManager[addr.String()]
+	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
 		logrus.Errorf("offset fetch failed when get userinfo by addr %s, kafka topic: %s", addr.String(), topic)
@@ -1023,7 +1023,7 @@ func (b *Broker) OffsetLeaderEpochAction(addr net.Addr, topic string, req *codec
 
 func (b *Broker) getProducer(addr net.Addr, username, pulsarTopic string) (pulsar.Producer, error) {
 	b.mutex.Lock()
-	producer, exist := b.producerManager[addr.String()]
+	producer, exist := b.producerManager[addr]
 	var err error
 	if !exist {
 		options := pulsar.ProducerOptions{}
@@ -1038,7 +1038,7 @@ func (b *Broker) getProducer(addr net.Addr, username, pulsarTopic string) (pulsa
 			return nil, err
 		}
 		logrus.Infof("create producer success, topic: %s, addr: %s", pulsarTopic, addr.String())
-		b.producerManager[addr.String()] = producer
+		b.producerManager[addr] = producer
 	}
 	b.mutex.Unlock()
 	return producer, nil
@@ -1047,7 +1047,7 @@ func (b *Broker) getProducer(addr net.Addr, username, pulsarTopic string) (pulsa
 func (b *Broker) ProduceAction(addr net.Addr, topic string, partition int, req *codec.ProducePartitionReq) (*codec.ProducePartitionResp, error) {
 	errList := make([]*codec.RecordError, 0)
 	b.mutex.RLock()
-	user, exist := b.userInfoManager[addr.String()]
+	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
 		logrus.Errorf("user not exist, addr: %s, username: %s, topic: %s", addr.String(), user.username, topic)
@@ -1123,11 +1123,11 @@ func (b *Broker) SaslAuthAction(addr net.Addr, req codec.SaslAuthenticateReq) (b
 		return false, codec.SASL_AUTHENTICATION_FAILED
 	}
 	b.mutex.RLock()
-	_, exist := b.userInfoManager[addr.String()]
+	_, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
 		b.mutex.Lock()
-		b.userInfoManager[addr.String()] = &userInfo{
+		b.userInfoManager[addr] = &userInfo{
 			username: req.Username,
 			clientId: req.ClientId,
 		}
@@ -1144,10 +1144,6 @@ func (b *Broker) SaslAuthTopicAction(addr net.Addr, req codec.SaslAuthenticateRe
 	return true, codec.NONE
 }
 
-func (b *Broker) AuthGroupTopicAction(topic, groupId string) bool {
-	return b.server.AuthGroupTopic(topic, groupId)
-}
-
 func (b *Broker) SaslAuthConsumerGroupAction(addr net.Addr, req codec.SaslAuthenticateReq, consumerGroup string) (bool, codec.ErrorCode) {
 	auth, err := b.server.AuthTopicGroup(req.Username, req.Password, req.ClientId, consumerGroup)
 	if err != nil || !auth {
@@ -1158,7 +1154,7 @@ func (b *Broker) SaslAuthConsumerGroupAction(addr net.Addr, req codec.SaslAuthen
 
 func (b *Broker) HeartBeatAction(addr net.Addr, req codec.HeartbeatReq) *codec.HeartbeatResp {
 	b.mutex.RLock()
-	user, exist := b.userInfoManager[addr.String()]
+	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
 		logrus.Errorf("heartbeat user not exist when get userinfo by addr %s", addr.String())
@@ -1291,17 +1287,17 @@ func (b *Broker) DisconnectAction(addr net.Addr) {
 	}
 	b.mutex.RLock()
 	memberInfo, exist := b.memberManager[addr.String()]
-	producer, producerExist := b.producerManager[addr.String()]
+	producer, producerExist := b.producerManager[addr]
 	b.mutex.RUnlock()
 	if producerExist {
 		producer.Close()
 		b.mutex.Lock()
-		delete(b.producerManager, addr.String())
+		delete(b.producerManager, addr)
 		b.mutex.Unlock()
 	}
 	if !exist {
 		b.mutex.Lock()
-		delete(b.userInfoManager, addr.String())
+		delete(b.userInfoManager, addr)
 		b.mutex.Unlock()
 		return
 	}
@@ -1322,7 +1318,7 @@ func (b *Broker) DisconnectAction(addr net.Addr) {
 	}
 	// leave group will use user information
 	b.mutex.Lock()
-	delete(b.userInfoManager, addr.String())
+	delete(b.userInfoManager, addr)
 	b.mutex.Unlock()
 }
 
