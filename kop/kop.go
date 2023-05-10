@@ -9,7 +9,6 @@ import (
 	"github.com/protocol-laboratory/kafka-codec-go/knet"
 	"github.com/protocol-laboratory/pulsar-admin-go/padmin"
 	"github.com/sirupsen/logrus"
-	"net"
 	"sync"
 )
 
@@ -101,51 +100,6 @@ type Server interface {
 	ListTopic(username string) ([]string, error)
 
 	HasFlowQuota(username, topic string) bool
-}
-
-type KafkaAction interface {
-	PartitionNumAction(addr net.Addr, topic string) (int, error)
-
-	TopicListAction(addr net.Addr) ([]string, error)
-
-	// FetchAction method called this already authed
-	FetchAction(addr net.Addr, req *codec.FetchReq) ([]*codec.FetchTopicResp, error)
-
-	// GroupJoinAction method called this already authed
-	GroupJoinAction(addr net.Addr, req *codec.JoinGroupReq) (*codec.JoinGroupResp, error)
-
-	// GroupLeaveAction method called this already authed
-	GroupLeaveAction(addr net.Addr, req *codec.LeaveGroupReq) (*codec.LeaveGroupResp, error)
-
-	// GroupSyncAction method called this already authed
-	GroupSyncAction(addr net.Addr, req *codec.SyncGroupReq) (*codec.SyncGroupResp, error)
-
-	// OffsetListPartitionAction method called this already authed
-	OffsetListPartitionAction(addr net.Addr, topic, clientID string, req *codec.ListOffsetsPartition) (*codec.ListOffsetsPartitionResp, error)
-
-	// OffsetCommitPartitionAction method called this already authed
-	OffsetCommitPartitionAction(addr net.Addr, topic, clientID string, req *codec.OffsetCommitPartitionReq) (*codec.OffsetCommitPartitionResp, error)
-
-	// OffsetFetchAction method called this already authed
-	OffsetFetchAction(addr net.Addr, topic, clientID, groupID string, req *codec.OffsetFetchPartitionReq) (*codec.OffsetFetchPartitionResp, error)
-
-	// OffsetLeaderEpochAction method called this already authed
-	OffsetLeaderEpochAction(addr net.Addr, topic string, req *codec.OffsetLeaderEpochPartitionReq) (*codec.OffsetForLeaderEpochPartitionResp, error)
-
-	// ProduceAction method called this already authed
-	ProduceAction(addr net.Addr, topic string, partition int, req *codec.ProducePartitionReq) (*codec.ProducePartitionResp, error)
-
-	SaslAuthAction(addr net.Addr, req codec.SaslAuthenticateReq) (bool, codec.ErrorCode)
-
-	SaslAuthTopicAction(addr net.Addr, req codec.SaslAuthenticateReq, topic, permissionType string) (bool, codec.ErrorCode)
-
-	AuthGroupTopicAction(topic, groupId string) bool
-
-	SaslAuthConsumerGroupAction(addr net.Addr, req codec.SaslAuthenticateReq, consumerGroup string) (bool, codec.ErrorCode)
-
-	HeartBeatAction(addr net.Addr, req codec.HeartbeatReq) *codec.HeartbeatResp
-
-	DisconnectAction(addr net.Addr)
 }
 
 type Broker struct {
