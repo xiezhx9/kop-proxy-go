@@ -8,7 +8,7 @@ import (
 
 func (b *Broker) ReactSyncGroup(ctx *NetworkContext, req *codec.SyncGroupReq) (*codec.SyncGroupResp, error) {
 	if !b.checkSaslGroup(ctx, req.GroupId) {
-		return nil, fmt.Errorf("only supports sasl in current version")
+		return nil, fmt.Errorf("connection is not authed")
 	}
 	logrus.Debugf("sync group req: %+v", req)
 	lowResp, err := b.GroupSyncAction(ctx.Addr, req)

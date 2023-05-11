@@ -9,7 +9,7 @@ import (
 
 func (b *Broker) ListOffsetsVersion(ctx *NetworkContext, req *codec.ListOffsetsReq) (*codec.ListOffsetsResp, error) {
 	if !b.checkSasl(ctx) {
-		return nil, fmt.Errorf("only supports sasl in current version")
+		return nil, fmt.Errorf("connection is not authed")
 	}
 	logrus.Debugf("list offset req: %+v", req)
 	resp := make([]*codec.ListOffsetsTopicResp, len(req.TopicReqList))

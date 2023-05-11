@@ -8,7 +8,7 @@ import (
 
 func (b *Broker) ReactLeaveGroup(ctx *NetworkContext, req *codec.LeaveGroupReq) (*codec.LeaveGroupResp, error) {
 	if !b.checkSaslGroup(ctx, req.GroupId) {
-		return nil, fmt.Errorf("only supports sasl in current version")
+		return nil, fmt.Errorf("connection is not authed")
 	}
 	logrus.Debugf("leave group req: %+v", req)
 

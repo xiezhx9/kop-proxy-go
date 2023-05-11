@@ -9,7 +9,7 @@ import (
 
 func (b *Broker) OffsetFetchVersion(ctx *NetworkContext, req *codec.OffsetFetchReq) (*codec.OffsetFetchResp, error) {
 	if !b.checkSasl(ctx) {
-		return nil, fmt.Errorf("only supports sasl in current version")
+		return nil, fmt.Errorf("connection is not authed")
 	}
 	logrus.Debugf("offset fetch req: %+v", req)
 	resp := &codec.OffsetFetchResp{

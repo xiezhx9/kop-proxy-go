@@ -8,7 +8,7 @@ import (
 
 func (b *Broker) OffsetForLeaderEpochVersion(ctx *NetworkContext, req *codec.OffsetForLeaderEpochReq) (*codec.OffsetForLeaderEpochResp, error) {
 	if !b.checkSasl(ctx) {
-		return nil, fmt.Errorf("only supports sasl in current version")
+		return nil, fmt.Errorf("connection is not authed")
 	}
 	resp := make([]*codec.OffsetForLeaderEpochTopicResp, len(req.TopicReqList))
 	for i, topicReq := range req.TopicReqList {

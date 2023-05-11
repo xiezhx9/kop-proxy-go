@@ -9,7 +9,7 @@ import (
 
 func (b *Broker) ReactFetch(ctx *NetworkContext, req *codec.FetchReq) (*codec.FetchResp, error) {
 	if !b.checkSasl(ctx) {
-		return nil, fmt.Errorf("only supports sasl in current version")
+		return nil, fmt.Errorf("connection is not authed")
 	}
 	logrus.Debugf("fetch req: %+v", req)
 	for _, topicReq := range req.TopicReqList {

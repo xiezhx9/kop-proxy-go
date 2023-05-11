@@ -8,7 +8,7 @@ import (
 
 func (b *Broker) ReactJoinGroup(ctx *NetworkContext, req *codec.JoinGroupReq) (*codec.JoinGroupResp, error) {
 	if !b.checkSaslGroup(ctx, req.GroupId) {
-		return nil, fmt.Errorf("only supports sasl in current version")
+		return nil, fmt.Errorf("connection is not authed")
 	}
 	logrus.Debugf("join group req: %+v", req)
 	lowResp, err := b.GroupJoinAction(ctx.Addr, req)

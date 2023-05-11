@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/protocol-laboratory/kafka-codec-go/codec"
 	"github.com/protocol-laboratory/kafka-codec-go/knet"
+	"github.com/protocol-laboratory/kop-proxy-go/log"
 	"github.com/protocol-laboratory/pulsar-admin-go/padmin"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -60,6 +61,8 @@ type Config struct {
 
 	DebugKafkaTopicSet  set.Set[string]
 	DebugPulsarTopicSet set.Set[string]
+
+	LogFormatter logrus.Formatter
 }
 
 type PulsarConfig struct {
@@ -126,6 +129,8 @@ type Broker struct {
 	memberManager      map[net.Addr]*MemberInfo
 	topicGroupManager  map[string]string
 	offsetManager      OffsetManager
+
+	logger log.Logger
 }
 
 func NewKop(impl Server, config *Config) (*Broker, error) {
@@ -135,7 +140,11 @@ func NewKop(impl Server, config *Config) (*Broker, error) {
 	if config.DebugPulsarTopicSet == nil {
 		config.DebugPulsarTopicSet = set.Set[string]{}
 	}
-	broker := &Broker{server: impl, config: config}
+	broker := &Broker{
+		server: impl,
+		config: config,
+		logger: log.NewLoggerWithLogrus(logrus.New(), config.LogFormatter),
+	}
 	pulsarUrl := fmt.Sprintf("pulsar://%s:%d", config.PulsarConfig.Host, config.PulsarConfig.TcpPort)
 	var err error
 	broker.pClient, err = pulsar.NewClient(pulsar.ClientOptions{URL: pulsarUrl})

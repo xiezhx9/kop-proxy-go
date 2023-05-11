@@ -9,7 +9,7 @@ import (
 
 func (b *Broker) ReactProduce(ctx *NetworkContext, req *codec.ProduceReq, config *Config) (*codec.ProduceResp, error) {
 	if !b.checkSasl(ctx) {
-		return nil, fmt.Errorf("only supports sasl in current version")
+		return nil, fmt.Errorf("connection is not authed")
 	}
 	logrus.Debugf("produce req: %+v", req)
 	result := &codec.ProduceResp{
