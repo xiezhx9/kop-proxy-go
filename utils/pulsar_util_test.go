@@ -22,6 +22,17 @@ func TestGetTenantNamespaceTopicFromPartitionedPrefix(t *testing.T) {
 			input:       "persistent://my-tenant/my-namespace/my-topic-partition-invalid",
 			expectError: true,
 		},
+		{
+			name:  "Valid partition",
+			input: "persistent://my-tenant/my-namespace/my-topic-valid-partition-0",
+			expected: PartitionedTopicInfo{
+				Tenant:    "my-tenant",
+				Namespace: "my-namespace",
+				Topic:     "my-topic-valid",
+				Partition: 0,
+			},
+			expectError: false,
+		},
 	}
 
 	for _, tc := range testCases {

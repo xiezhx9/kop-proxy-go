@@ -59,7 +59,7 @@ func GetLatestMsgId(partitionedTopic string, client *padmin.PulsarAdmin) (*padmi
 	return client.PersistentTopics.GetLastMessageId(tenant, namespace, topic)
 }
 
-var fullTopicMatch = regexp.MustCompile(`^(persistent|non-persistent)://(.*?)/(.*?)/(.*?)-partition-(\\d+)`)
+var fullTopicMatch = regexp.MustCompile(`^(persistent|non-persistent)://(.*?)/(.*?)/(.*?)-partition-(\d+)`)
 
 type PartitionedTopicInfo struct {
 	Tenant    string
@@ -73,17 +73,17 @@ func GetTenantNamespaceTopicFromPartitionedPrefix(str string) (info PartitionedT
 	if len(res) != 1 {
 		return info, fmt.Errorf("get tenant and namespace failed, topic: %s", str)
 	}
-	if len(res[0]) != 5 {
+	if len(res[0]) != 6 {
 		return info, fmt.Errorf("get tenant and namespace failed, topic: %s", str)
 	}
-	i64, err := strconv.ParseInt(res[0][4], 10, 64)
+	i64, err := strconv.ParseInt(res[0][5], 10, 64)
 	if err != nil {
 		return info, fmt.Errorf("partition is not int, topic: %s", str)
 	}
 	return PartitionedTopicInfo{
-		Tenant:    res[0][1],
-		Namespace: res[0][2],
-		Topic:     res[0][3],
+		Tenant:    res[0][2],
+		Namespace: res[0][3],
+		Topic:     res[0][4],
 		Partition: int(i64),
 	}, nil
 }
