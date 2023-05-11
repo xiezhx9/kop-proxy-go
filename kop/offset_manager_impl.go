@@ -234,7 +234,7 @@ func (o *OffsetManagerImpl) RemoveOffsetWithKey(key string) {
 	logrus.Infof("remove offset success. key: %s, offset: %d", key, value.Offset)
 }
 
-func (o *OffsetManagerImpl) GracefulSendOffsetMessages(metadataMap map[string]*PulsarConsumerHandle) error {
+func (o *OffsetManagerImpl) GracefulSendOffsetMessages(consumerHandle map[string]*PulsarConsumerHandle) error {
 	logrus.Infof("begin graceful send offset messages")
 	if len(o.offsetMap) == 0 {
 		logrus.Infof("offset map is empty")
@@ -244,14 +244,14 @@ func (o *OffsetManagerImpl) GracefulSendOffsetMessages(metadataMap map[string]*P
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
 
-	for key, metadata := range metadataMap {
+	for key, handle := range consumerHandle {
 		topicInfo, err := utils.GetTenantNamespaceTopicFromPartitionedPrefix(key)
 		if err != nil {
 			logrus.Errorf("get topic info failed. key: %s, err: %s", key, err)
 			continue
 		}
 
-		offsetKey := o.GenerateKey(metadata.username, topicInfo.Topic, metadata.groupId, topicInfo.Partition)
+		offsetKey := o.GenerateKey(handle.username, topicInfo.Topic, handle.groupId, topicInfo.Partition)
 
 		message, ok := o.offsetMap[offsetKey]
 		if !ok {
@@ -269,7 +269,7 @@ func (o *OffsetManagerImpl) GracefulSendOffsetMessages(metadataMap map[string]*P
 	return nil
 }
 
-func (o *OffsetManagerImpl) GracefulSendOffsetMessage(key string, metadata *PulsarConsumerHandle) error {
+func (o *OffsetManagerImpl) GracefulSendOffsetMessage(key string, consumerHandle *PulsarConsumerHandle) error {
 	if len(o.offsetMap) == 0 {
 		logrus.Infof("offset map is empty")
 		return nil
@@ -281,7 +281,7 @@ func (o *OffsetManagerImpl) GracefulSendOffsetMessage(key string, metadata *Puls
 		return err
 	}
 
-	offsetKey := o.GenerateKey(metadata.username, topicInfo.Topic, metadata.groupId, topicInfo.Partition)
+	offsetKey := o.GenerateKey(consumerHandle.username, topicInfo.Topic, consumerHandle.groupId, topicInfo.Partition)
 
 	o.mutex.Lock()
 	message, ok := o.offsetMap[offsetKey]

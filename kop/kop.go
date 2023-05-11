@@ -109,28 +109,24 @@ type Server interface {
 }
 
 type Broker struct {
-	server     Server
-	knetServer *knet.KafkaNetServer
-
-	connCount int32
-	connMutex sync.Mutex
-	ConnMap   sync.Map
-	SaslMap   sync.Map
-
-	config             *Config
-	pClient            pulsar.Client
-	pAdmin             *padmin.PulsarAdmin
-	mutex              sync.RWMutex
-	pulsarClientManage map[string]pulsar.Client
-	groupCoordinator   GroupCoordinator
-	producerManager    map[net.Addr]pulsar.Producer
-	consumerManager    map[string]*PulsarConsumerHandle
-	userInfoManager    map[net.Addr]*userInfo
-	memberManager      map[net.Addr]*MemberInfo
-	topicGroupManager  map[string]string
-	offsetManager      OffsetManager
-
-	logger log.Logger
+	server            Server
+	knetServer        *knet.KafkaNetServer
+	connCount         int32
+	connMutex         sync.Mutex
+	ConnMap           sync.Map
+	SaslMap           sync.Map
+	config            *Config
+	pClient           pulsar.Client
+	pAdmin            *padmin.PulsarAdmin
+	mutex             sync.RWMutex
+	groupCoordinator  GroupCoordinator
+	producerManager   map[net.Addr]pulsar.Producer
+	consumerManager   map[string]*PulsarConsumerHandle
+	userInfoManager   map[net.Addr]*userInfo
+	memberManager     map[net.Addr]*MemberInfo
+	topicGroupManager map[string]string
+	offsetManager     OffsetManager
+	logger            log.Logger
 }
 
 func NewKop(impl Server, config *Config) (*Broker, error) {
@@ -182,7 +178,6 @@ func NewKop(impl Server, config *Config) (*Broker, error) {
 	broker.consumerManager = make(map[string]*PulsarConsumerHandle)
 	broker.userInfoManager = make(map[net.Addr]*userInfo)
 	broker.memberManager = make(map[net.Addr]*MemberInfo)
-	broker.pulsarClientManage = make(map[string]pulsar.Client)
 	broker.topicGroupManager = make(map[string]string)
 	broker.producerManager = make(map[net.Addr]pulsar.Producer)
 	broker.knetServer, err = knet.NewKafkaNetServer(config.NetConfig, broker)

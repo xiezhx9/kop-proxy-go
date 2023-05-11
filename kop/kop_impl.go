@@ -643,23 +643,17 @@ func (b *Broker) GroupLeaveAction(addr net.Addr, req *codec.LeaveGroupReq) (*cod
 	}
 	for _, topic := range group.partitionedTopic {
 		b.mutex.Lock()
-		consumerMetadata, exist := b.consumerManager[topic+req.ClientId]
+		consumerHandle, exist := b.consumerManager[topic+req.ClientId]
 		if exist {
-			consumerMetadata.mutex.Lock()
-			consumerMetadata.consumer.Close()
-			consumerMetadata.mutex.Unlock()
+			consumerHandle.mutex.Lock()
+			consumerHandle.consumer.Close()
+			consumerHandle.mutex.Unlock()
 			b.logger.Addr(addr).ClientID(req.ClientId).Infof("success close consumer topic: %s", group.partitionedTopic)
-			if err := b.offsetManager.GracefulSendOffsetMessage(topic, consumerMetadata); err != nil {
+			if err := b.offsetManager.GracefulSendOffsetMessage(topic, consumerHandle); err != nil {
 				b.logger.Addr(addr).ClientID(req.ClientId).Errorf("graceful send offset message failed: %v", err)
 			}
 			delete(b.consumerManager, topic+req.ClientId)
-			consumerMetadata = nil
-		}
-		client, exist := b.pulsarClientManage[topic+req.ClientId]
-		if exist {
-			client.Close()
-			delete(b.pulsarClientManage, topic+req.ClientId)
-			client = nil
+			consumerHandle = nil
 		}
 		delete(b.topicGroupManager, topic+req.ClientId)
 		b.mutex.Unlock()
@@ -711,29 +705,7 @@ func (b *Broker) OffsetListPartitionAction(addr net.Addr, topic, clientID string
 		}, nil
 	}
 	b.mutex.RLock()
-	client, exist := b.pulsarClientManage[partitionedTopic+clientID]
-	if !exist {
-		groupId, exist := b.topicGroupManager[partitionedTopic+clientID]
-		b.mutex.RUnlock()
-		if exist {
-			group, err := b.groupCoordinator.GetGroup(user.username, groupId)
-			if err == nil && group.groupStatus != Stable {
-				b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Info("group is preparing rebalance.")
-				return &codec.ListOffsetsPartitionResp{
-					PartitionId: req.PartitionId,
-					ErrorCode:   codec.LEADER_NOT_AVAILABLE,
-					Timestamp:   constant.TimeEarliest,
-				}, nil
-			}
-		}
-		b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Error("pulsar client not exists.")
-		return &codec.ListOffsetsPartitionResp{
-			PartitionId: req.PartitionId,
-			ErrorCode:   codec.UNKNOWN_SERVER_ERROR,
-			Timestamp:   constant.TimeEarliest,
-		}, nil
-	}
-	consumerMessages, exist := b.consumerManager[partitionedTopic+clientID]
+	consumerHandle, exist := b.consumerManager[partitionedTopic+clientID]
 	b.mutex.RUnlock()
 	if !exist {
 		b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Error("offset list failed, topic does not exist.")
@@ -752,7 +724,7 @@ func (b *Broker) OffsetListPartitionAction(addr net.Addr, topic, clientID string
 				ErrorCode:   codec.UNKNOWN_SERVER_ERROR,
 			}, nil
 		}
-		lastedMsg, err := utils.ReadLatestMsg(partitionedTopic, b.config.MaxFetchWaitMs, latestMsgId, client)
+		lastedMsg, err := utils.ReadLatestMsg(partitionedTopic, b.config.MaxFetchWaitMs, latestMsgId, consumerHandle.client)
 		if err != nil {
 			b.logger.Addr(addr).ClientID(clientID).Topic(topic).Errorf("read lasted latestMsgId failed. err: %s", err)
 			return &codec.ListOffsetsPartitionResp{
@@ -761,9 +733,9 @@ func (b *Broker) OffsetListPartitionAction(addr net.Addr, topic, clientID string
 			}, nil
 		}
 		if lastedMsg != nil {
-			consumerMessages.mutex.Lock()
-			err := consumerMessages.consumer.Seek(lastedMsg.ID())
-			consumerMessages.mutex.Unlock()
+			consumerHandle.mutex.Lock()
+			err := consumerHandle.consumer.Seek(lastedMsg.ID())
+			consumerHandle.mutex.Unlock()
 			if err != nil {
 				b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Errorf("offset list failed: %s", err)
 				return &codec.ListOffsetsPartitionResp{
@@ -861,44 +833,44 @@ func (b *Broker) OffsetCommitPartitionAction(addr net.Addr, topic, clientID stri
 	}, nil
 }
 
-func (b *Broker) createConsumer(partitionedTopic string, subscriptionName string, messageId pulsar.MessageID, clientId string) (chan pulsar.ConsumerMessage, pulsar.Consumer, error) {
-	client, exist := b.pulsarClientManage[partitionedTopic+clientId]
-	if !exist {
-		var err error
-		pulsarUrl := fmt.Sprintf("pulsar://%s:%d", b.config.PulsarConfig.Host, b.config.PulsarConfig.TcpPort)
-		client, err = pulsar.NewClient(pulsar.ClientOptions{URL: pulsarUrl})
-		if err != nil {
-			b.logger.ClientID(clientId).Topic(partitionedTopic).Errorf("create pulsar client failed: %v", err)
-			return nil, nil, err
-		}
-		b.pulsarClientManage[partitionedTopic+clientId] = client
+func (b *Broker) createConsumerHandle(partitionedTopic string, subscriptionName string, messageId pulsar.MessageID, clientId string) (*PulsarConsumerHandle, error) {
+	var (
+		handle = &PulsarConsumerHandle{messageIds: list.New()}
+		err    error
+	)
+	pulsarUrl := fmt.Sprintf("pulsar://%s:%d", b.config.PulsarConfig.Host, b.config.PulsarConfig.TcpPort)
+	handle.client, err = pulsar.NewClient(pulsar.ClientOptions{URL: pulsarUrl})
+	if err != nil {
+		b.logger.ClientID(clientId).Topic(partitionedTopic).Errorf("create pulsar client failed: %v", err)
+		return nil, err
 	}
-	channel := make(chan pulsar.ConsumerMessage, b.config.ConsumerReceiveQueueSize)
+	handle.channel = make(chan pulsar.ConsumerMessage, b.config.ConsumerReceiveQueueSize)
 	options := pulsar.ConsumerOptions{
 		Topic:                       partitionedTopic,
 		Name:                        subscriptionName,
 		SubscriptionName:            subscriptionName,
 		Type:                        pulsar.Failover,
 		SubscriptionInitialPosition: pulsar.SubscriptionPositionEarliest,
-		MessageChannel:              channel,
+		MessageChannel:              handle.channel,
 		ReceiverQueueSize:           b.config.ConsumerReceiveQueueSize,
 	}
-	consumer, err := client.Subscribe(options)
+	handle.consumer, err = handle.client.Subscribe(options)
 	if err != nil {
 		b.logger.ClientID(clientId).Topic(partitionedTopic).Warnf("subscribe consumer failed: %s", err)
-		return nil, nil, err
+		handle.close()
+		return nil, err
 	}
 	if messageId != pulsar.EarliestMessageID() {
-		err = consumer.Seek(messageId)
+		err = handle.consumer.Seek(messageId)
 		if err != nil {
 			b.logger.ClientID(clientId).Topic(partitionedTopic).Warnf("seek message failed: %s", err)
-			consumer.Close()
-			return nil, nil, err
+			handle.close()
+			return nil, err
 		}
 		b.logger.ClientID(clientId).Topic(partitionedTopic).Infof("kafka topic previouse message id: %s", messageId)
 	}
 	b.logger.ClientID(clientId).Topic(partitionedTopic).Infof("create consumer success, subscription name: %s", subscriptionName)
-	return channel, consumer, nil
+	return handle, nil
 }
 
 func (b *Broker) checkPartitionTopicExist(topics []string, partitionTopic string) bool {
@@ -963,8 +935,7 @@ func (b *Broker) OffsetFetchAction(addr net.Addr, topic, clientID, groupID strin
 	b.mutex.RUnlock()
 	if !exist {
 		b.mutex.Lock()
-		metadata := PulsarConsumerHandle{username: user.username, groupId: groupID, messageIds: list.New()}
-		channel, consumer, err := b.createConsumer(partitionedTopic, subscriptionName, messageId, clientID)
+		consumerHandle, err := b.createConsumerHandle(partitionedTopic, subscriptionName, messageId, clientID)
 		if err != nil {
 			b.mutex.Unlock()
 			b.logger.Addr(addr).ClientID(clientID).Topic(topic).Errorf("create channel failed: %s", err)
@@ -972,9 +943,9 @@ func (b *Broker) OffsetFetchAction(addr net.Addr, topic, clientID, groupID strin
 				ErrorCode: codec.UNKNOWN_SERVER_ERROR,
 			}, nil
 		}
-		metadata.consumer = consumer
-		metadata.channel = channel
-		b.consumerManager[partitionedTopic+clientID] = &metadata
+		consumerHandle.groupId = groupID
+		consumerHandle.username = user.username
+		b.consumerManager[partitionedTopic+clientID] = consumerHandle
 		b.mutex.Unlock()
 	}
 
@@ -1185,23 +1156,17 @@ func (b *Broker) HeartBeatAction(addr net.Addr, req codec.HeartbeatReq) *codec.H
 		}
 		for _, topic := range group.partitionedTopic {
 			b.mutex.Lock()
-			consumerMetadata, exist := b.consumerManager[topic+req.ClientId]
+			consumerHandle, exist := b.consumerManager[topic+req.ClientId]
 			if exist {
-				consumerMetadata.mutex.Lock()
-				consumerMetadata.consumer.Close()
-				consumerMetadata.mutex.Unlock()
-				if err := b.offsetManager.GracefulSendOffsetMessage(topic, consumerMetadata); err != nil {
+				consumerHandle.mutex.Lock()
+				consumerHandle.close()
+				consumerHandle.mutex.Unlock()
+				if err := b.offsetManager.GracefulSendOffsetMessage(topic, consumerHandle); err != nil {
 					b.logger.Addr(addr).Errorf("graceful send offset message failed: %v", err)
 				}
 				b.logger.Addr(addr).Infof("success close consumer topic due to heartbeat failed: %s", group.partitionedTopic)
 				delete(b.consumerManager, topic+req.ClientId)
-				consumerMetadata = nil
-			}
-			client, exist := b.pulsarClientManage[topic+req.ClientId]
-			if exist {
-				client.Close()
-				delete(b.pulsarClientManage, topic+req.ClientId)
-				client = nil
+				consumerHandle = nil
 			}
 			b.mutex.Unlock()
 		}
@@ -1213,12 +1178,6 @@ func (b *Broker) ProducePulsarProducerSize() int {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 	return len(b.producerManager)
-}
-
-func (b *Broker) ConsumePulsarClientSize() int {
-	b.mutex.Lock()
-	defer b.mutex.Unlock()
-	return len(b.pulsarClientManage)
 }
 
 func (b *Broker) ConsumePulsarConsumerSize() int {
@@ -1346,9 +1305,9 @@ func (b *Broker) Close() {
 	}
 	b.CloseServer()
 	b.mutex.Lock()
-	for key, value := range b.pulsarClientManage {
-		value.Close()
-		delete(b.pulsarClientManage, key)
+	for key, consumerHandle := range b.consumerManager {
+		consumerHandle.close()
+		delete(b.consumerManager, key)
 	}
 	for key, value := range b.producerManager {
 		value.Close()
