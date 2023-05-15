@@ -1270,7 +1270,7 @@ func (b *Broker) DisconnectAction(addr net.Addr) {
 	}
 	if !exist {
 		b.mutex.Lock()
-		delete(b.userInfoManager, addr)
+		delete(b.memberManager, addr)
 		b.mutex.Unlock()
 		return
 	}
