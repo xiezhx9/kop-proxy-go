@@ -22,7 +22,7 @@ func (b *Broker) ConnectionOpened(conn *knet.Conn) {
 		return
 	}
 
-	b.ConnMap.Store(conn.RemoteAddr(), conn.Conn)
+	b.ConnMap.Store(conn.RemoteAddr().String(), conn.Conn)
 
 	count := atomic.AddInt32(&b.connCount, 1)
 
@@ -35,9 +35,9 @@ func (b *Broker) ConnectionClosed(conn *knet.Conn) {
 	if err := conn.Close(); err != nil {
 		b.logger.Addr(conn.RemoteAddr()).Errorf("close connection failed: %s", err.Error())
 	}
-	_, exists := b.ConnMap.LoadAndDelete(conn.RemoteAddr())
+	_, exists := b.ConnMap.LoadAndDelete(conn.RemoteAddr().String())
 	if exists {
-		b.SaslMap.Delete(conn.RemoteAddr())
+		b.SaslMap.Delete(conn.RemoteAddr().String())
 		atomic.AddInt32(&b.connCount, -1)
 	}
 }
@@ -1190,13 +1190,8 @@ func (b *Broker) DisconnectAll() {
 	b.logger.Info("connection all closed.")
 
 	for addr := range b.producerManager {
-		v, loaded := b.ConnMap.Load(addr)
+		conn, loaded := b.ConnMap.Load(addr.String())
 		if !loaded {
-			continue
-		}
-
-		conn, ok := v.(net.Conn)
-		if !ok {
 			continue
 		}
 
@@ -1211,13 +1206,8 @@ func (b *Broker) DisconnectAllLocalAddr(localAddr string) {
 	b.logger.Infof("connection all local addr %s closed.", localAddr)
 
 	for addr := range b.producerManager {
-		v, loaded := b.ConnMap.Load(addr)
+		conn, loaded := b.ConnMap.Load(addr.String())
 		if !loaded {
-			continue
-		}
-
-		conn, ok := v.(net.Conn)
-		if !ok {
 			continue
 		}
 
@@ -1236,13 +1226,8 @@ func (b *Broker) DisconnectRemoteAddr(addrList []string) {
 	b.logger.Infof("connection remote addr closed : %v.", addrList)
 
 	for _, addr := range addrList {
-		v, loaded := b.ConnMap.Load(addr)
+		conn, loaded := b.ConnMap.Load(addr)
 		if !loaded {
-			continue
-		}
-
-		conn, ok := v.(net.Conn)
-		if !ok {
 			continue
 		}
 

@@ -27,6 +27,6 @@ func (b *Broker) ReactSaslHandshakeAuth(req *codec.SaslAuthenticateReq, context 
 
 	}
 	context.Authed(true)
-	b.SaslMap.Store(context.Addr, saslReq)
+	b.SaslMap.Store(context.Addr.String(), saslReq)
 	return saslHandshakeResp, nil
 }

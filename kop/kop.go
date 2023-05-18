@@ -3,6 +3,7 @@ package kop
 import (
 	"fmt"
 	"github.com/Shoothzj/gox/set"
+	"github.com/Shoothzj/gox/syncx"
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/pkg/errors"
 	"github.com/protocol-laboratory/kafka-codec-go/codec"
@@ -113,8 +114,8 @@ type Broker struct {
 	knetServer        *knet.KafkaNetServer
 	connCount         int32
 	connMutex         sync.Mutex
-	ConnMap           sync.Map
-	SaslMap           sync.Map
+	ConnMap           syncx.Map[string, net.Conn]
+	SaslMap           syncx.Map[string, codec.SaslAuthenticateReq]
 	config            *Config
 	pClient           pulsar.Client
 	pAdmin            *padmin.PulsarAdmin
@@ -233,7 +234,7 @@ func (b *Broker) checkSasl(ctx *NetworkContext) bool {
 	if !b.config.NeedSasl {
 		return true
 	}
-	_, ok := b.SaslMap.Load(ctx.Addr)
+	_, ok := b.SaslMap.Load(ctx.Addr.String())
 	return ok
 }
 
@@ -241,11 +242,11 @@ func (b *Broker) checkSaslGroup(ctx *NetworkContext, groupId string) bool {
 	if !b.config.NeedSasl {
 		return true
 	}
-	saslReq, ok := b.SaslMap.Load(ctx.Addr)
+	saslReq, ok := b.SaslMap.Load(ctx.Addr.String())
 	if !ok {
 		return false
 	}
-	res, code := b.SaslAuthConsumerGroupAction(ctx.Addr, saslReq.(codec.SaslAuthenticateReq), groupId)
+	res, code := b.SaslAuthConsumerGroupAction(ctx.Addr, saslReq, groupId)
 	if code != 0 || !res {
 		return false
 	}
@@ -256,11 +257,11 @@ func (b *Broker) checkSaslTopic(ctx *NetworkContext, topic, permissionType strin
 	if !b.config.NeedSasl {
 		return true
 	}
-	saslReq, ok := b.SaslMap.Load(ctx.Addr)
+	saslReq, ok := b.SaslMap.Load(ctx.Addr.String())
 	if !ok {
 		return false
 	}
-	res, code := b.SaslAuthTopicAction(ctx.Addr, saslReq.(codec.SaslAuthenticateReq), topic, permissionType)
+	res, code := b.SaslAuthTopicAction(ctx.Addr, saslReq, topic, permissionType)
 	if code != 0 || !res {
 		return false
 	}
