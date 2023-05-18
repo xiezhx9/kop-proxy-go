@@ -1,6 +1,6 @@
 module github.com/protocol-laboratory/kop-proxy-go
 
-go 1.18
+go 1.20
 
 require (
 	github.com/Shoothzj/gox v0.0.0-20230425030816-71f4a66be4ad

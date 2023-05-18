@@ -1,15 +1,15 @@
 package utils
 
 import (
+	"github.com/Shoothzj/gox/syncx"
 	"golang.org/x/time/rate"
-	"sync"
 	"time"
 )
 
 type KeyBasedRateLimiter struct {
 	seconds    int
 	times      int
-	limiterMap sync.Map
+	limiterMap syncx.Map[string, *rate.Limiter]
 }
 
 func NewKeyBasedRateLimiter(seconds, times int) *KeyBasedRateLimiter {
@@ -21,7 +21,7 @@ func NewKeyBasedRateLimiter(seconds, times int) *KeyBasedRateLimiter {
 
 func (k *KeyBasedRateLimiter) Acquire(key string) bool {
 	rateLimiter, _ := k.limiterMap.LoadOrStore(key, rate.NewLimiter(rate.Every(time.Duration(k.seconds)*time.Second), k.times))
-	return rateLimiter.(*rate.Limiter).Allow()
+	return rateLimiter.Allow()
 }
 
 func (k *KeyBasedRateLimiter) Clean(key string) {
