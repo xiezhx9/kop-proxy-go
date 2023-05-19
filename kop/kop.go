@@ -126,6 +126,7 @@ type Broker struct {
 	userInfoManager   map[net.Addr]*userInfo
 	memberManager     map[net.Addr]*MemberInfo
 	topicGroupManager map[string]string
+	topicAddrManager  *syncx.SyncTable[string, string, net.Addr]
 	offsetManager     OffsetManager
 	logger            log.Logger
 }
@@ -180,6 +181,7 @@ func NewKop(impl Server, config *Config) (*Broker, error) {
 	broker.userInfoManager = make(map[net.Addr]*userInfo)
 	broker.memberManager = make(map[net.Addr]*MemberInfo)
 	broker.topicGroupManager = make(map[string]string)
+	broker.topicAddrManager = syncx.NewSyncTable[string, string, net.Addr]()
 	broker.producerManager = make(map[net.Addr]pulsar.Producer)
 	broker.knetServer, err = knet.NewKafkaNetServer(config.NetConfig, broker)
 	if err != nil {

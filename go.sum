@@ -46,8 +46,10 @@ github.com/DataDog/zstd v1.5.0/go.mod h1:g4AWEaM3yOg3HYfnJ3YIawPnVdXJh9QME85blwS
 github.com/Microsoft/go-winio v0.5.2 h1:a9IhgEQBCUEk6QCdml9CiJGhAws+YwffDHEMp1VMrpA=
 github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v8QkMxJ6pZY=
 github.com/Microsoft/hcsshim v0.9.7 h1:mKNHW/Xvv1aFH87Jb6ERDzXTJTLPlmzfZ28VBFD/bfg=
-github.com/Shoothzj/gox v0.0.0-20230425030816-71f4a66be4ad h1:jTP9YAjFIzgzBsT+rj5AjCeg0/dwxL/BBYRo0pASp3w=
-github.com/Shoothzj/gox v0.0.0-20230425030816-71f4a66be4ad/go.mod h1:QCFRoh5wevxlgrq7yi9Q674w/GhwiEWvpzGaZ4FhSiI=
+github.com/Shoothzj/gox v0.0.0-20230519042211-09ce91fd1f94 h1:ItHesteC+6WF6SMhOIYK6TLCGNVvvuwAByDzc3rpkAk=
+github.com/Shoothzj/gox v0.0.0-20230519042211-09ce91fd1f94/go.mod h1:QCFRoh5wevxlgrq7yi9Q674w/GhwiEWvpzGaZ4FhSiI=
+github.com/Shoothzj/gox v0.0.0-20230519043040-c113104c124a h1:7mCkQusIzgYrtqPraZdInWFGV0OTWRhvOdnmAphH+8Q=
+github.com/Shoothzj/gox v0.0.0-20230519043040-c113104c124a/go.mod h1:QCFRoh5wevxlgrq7yi9Q674w/GhwiEWvpzGaZ4FhSiI=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
@@ -311,8 +313,8 @@ github.com/prometheus/procfs v0.6.0/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1
 github.com/prometheus/procfs v0.7.3/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1xBZuNvfVA=
 github.com/prometheus/procfs v0.8.0 h1:ODq8ZFEaYeCaZOJlZZdJA2AbQR98dSHSM1KW/You5mo=
 github.com/prometheus/procfs v0.8.0/go.mod h1:z7EfXMXOkbkqb9IINtpCn86r/to3BnA0uaxHdg830/4=
-github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230424125913-68a38e3c6de5 h1:eftvI7rbSt27Oz/IWw5KylrpXHX9ZNFx63mJVk0PoAA=
-github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230424125913-68a38e3c6de5/go.mod h1:C1ani0++x7KssL1UDUqTLw40cfdc88vY8q+OdqM2Xqg=
+github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230518050546-60675a0c9729 h1:FAH5mSlLTghl1tvgaF3J/R/3lGd6wNDCta/oCUiBmsI=
+github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230518050546-60675a0c9729/go.mod h1:C1ani0++x7KssL1UDUqTLw40cfdc88vY8q+OdqM2Xqg=
 github.com/protocol-laboratory/pulsar-admin-go v0.0.0-20230406114908-e3c9f0d4bd4b h1:BHqGGFYbQZ7yWHMgRwTNYyZbDPp10iPmYvrYigDbOE4=
 github.com/protocol-laboratory/pulsar-admin-go v0.0.0-20230406114908-e3c9f0d4bd4b/go.mod h1:o/wSrUD5QEJOj4cNwoD7/FaBuSkB2tolSwpiw5un1O8=
 github.com/protocol-laboratory/pulsar-codec-go v0.0.0-20230316133629-dcbd34f20ab7 h1:vTKhGeHS/zteaDUW2gZ5oW/v2VWSYWuiDNfHlSgGLQs=
@@ -328,8 +330,8 @@ github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6Mwd
 github.com/sirupsen/logrus v1.6.0/go.mod h1:7uNnSEd1DgxDLC74fIahvMZmmYsHGZGEOFrfsX/uA88=
 github.com/sirupsen/logrus v1.7.0/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
 github.com/sirupsen/logrus v1.8.1/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
-github.com/sirupsen/logrus v1.9.0 h1:trlNQbNUG3OdDrDil03MCb1H2o9nJ1x4/5LYw7byDE0=
-github.com/sirupsen/logrus v1.9.0/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=
+github.com/sirupsen/logrus v1.9.2 h1:oxx1eChJGI6Uks2ZC4W1zpLlVgqB8ner4EuQwV4Ik1Y=
+github.com/sirupsen/logrus v1.9.2/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=
 github.com/spaolacci/murmur3 v1.1.0 h1:7c1g84S4BPRrfL5Xrdp6fOJ206sU9y293DDHaoy0bLI=
 github.com/spaolacci/murmur3 v1.1.0/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

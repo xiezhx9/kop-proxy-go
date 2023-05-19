@@ -744,7 +744,7 @@ func (b *Broker) OffsetListPartitionAction(addr net.Addr, topic, clientID string
 				}, nil
 			}
 			b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Infof(
-				"kafka topic previouse message id: %s, when trigger offset list partition action", lastedMsg.ID())
+				"kafka topic previous message id: %s, when trigger offset list partition action", lastedMsg.ID())
 			offset = convOffset(lastedMsg, b.config.ContinuousOffset) + 1
 		}
 	}
@@ -867,7 +867,7 @@ func (b *Broker) createConsumerHandle(partitionedTopic string, subscriptionName 
 			handle.close()
 			return nil, err
 		}
-		b.logger.ClientID(clientId).Topic(partitionedTopic).Infof("kafka topic previouse message id: %s", messageId)
+		b.logger.ClientID(clientId).Topic(partitionedTopic).Infof("kafka topic previous message id: %s", messageId)
 	}
 	b.logger.ClientID(clientId).Topic(partitionedTopic).Infof("create consumer success, subscription name: %s", subscriptionName)
 	return handle, nil
@@ -948,6 +948,7 @@ func (b *Broker) OffsetFetchAction(addr net.Addr, topic, clientID, groupID strin
 		b.consumerManager[partitionedTopic+clientID] = consumerHandle
 		b.mutex.Unlock()
 	}
+	b.topicAddrManager.Set(topic, partitionedTopic, addr)
 
 	if !b.checkPartitionTopicExist(group.partitionedTopic, partitionedTopic) {
 		group.partitionedTopic = append(group.partitionedTopic, partitionedTopic)
@@ -1164,11 +1165,18 @@ func (b *Broker) HeartBeatAction(addr net.Addr, req codec.HeartbeatReq) *codec.H
 				if err := b.offsetManager.GracefulSendOffsetMessage(topic, consumerHandle); err != nil {
 					b.logger.Addr(addr).Errorf("graceful send offset message failed: %v", err)
 				}
-				b.logger.Addr(addr).Infof("success close consumer topic due to heartbeat failed: %s", group.partitionedTopic)
+				b.logger.Addr(addr).Topic(topic).Info("success close consumer topic due to heartbeat failed.")
 				delete(b.consumerManager, topic+req.ClientId)
 				consumerHandle = nil
 			}
 			b.mutex.Unlock()
+
+			topicInfo, err := utils.GetTenantNamespaceTopicFromPartitionedPrefix(topic)
+			if err != nil {
+				b.logger.Topic(topic).Errorf("get topic info failed: %s", err)
+				continue
+			}
+			b.topicAddrManager.Delete(topicInfo.Topic, topic)
 		}
 	}
 	return resp
@@ -1299,4 +1307,14 @@ func (b *Broker) Close() {
 		delete(b.producerManager, key)
 	}
 	b.mutex.Unlock()
+}
+
+func (b *Broker) DisconnectConsumer(topic string) {
+	addrList, ok := b.topicAddrManager.LoadAndDelete(topic)
+	if !ok {
+		return
+	}
+	for _, addr := range addrList {
+		b.DisconnectAction(addr)
+	}
 }

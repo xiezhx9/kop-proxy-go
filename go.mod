@@ -3,17 +3,17 @@ module github.com/protocol-laboratory/kop-proxy-go
 go 1.20
 
 require (
-	github.com/Shoothzj/gox v0.0.0-20230425030816-71f4a66be4ad
+	github.com/Shoothzj/gox v0.0.0-20230519043040-c113104c124a
 	github.com/apache/pulsar-client-go v0.10.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/gogo/protobuf v1.3.2
 	github.com/google/uuid v1.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
-	github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230424125913-68a38e3c6de5
+	github.com/protocol-laboratory/kafka-codec-go v0.0.0-20230518050546-60675a0c9729
 	github.com/protocol-laboratory/pulsar-admin-go v0.0.0-20230406114908-e3c9f0d4bd4b
 	github.com/protocol-laboratory/pulsar-codec-go v0.0.0-20230316133629-dcbd34f20ab7
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.2
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8
 )
