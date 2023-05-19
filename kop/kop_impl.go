@@ -439,14 +439,6 @@ func (b *Broker) FetchAction(addr net.Addr, req *codec.FetchReq) ([]*codec.Fetch
 	return result, nil
 }
 
-func (b *Broker) partitionedTopic(user *userInfo, kafkaTopic string, partitionId int) (string, error) {
-	pulsarTopic, err := b.server.PulsarTopic(user.username, kafkaTopic)
-	if err != nil {
-		return "", err
-	}
-	return pulsarTopic + fmt.Sprintf(constant.PartitionSuffixFormat, partitionId), nil
-}
-
 // FetchPartition visible for testing
 func (b *Broker) FetchPartition(addr net.Addr, kafkaTopic, clientID string, req *codec.FetchPartitionReq, maxBytes int, minBytes int, maxWaitMs int) (*codec.FetchPartitionResp, error) {
 	start := time.Now()
@@ -658,6 +650,9 @@ func (b *Broker) GroupLeaveAction(addr net.Addr, req *codec.LeaveGroupReq) (*cod
 		delete(b.topicGroupManager, topic+req.ClientId)
 		b.mutex.Unlock()
 	}
+	b.mutex.Lock()
+	delete(b.memberManager, addr)
+	b.mutex.Unlock()
 	return leaveGroupResp, nil
 }
 
@@ -893,7 +888,7 @@ func (b *Broker) OffsetFetchAction(addr net.Addr, topic, clientID, groupID strin
 			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
 		}, nil
 	}
-	partitionedTopic, err := b.partitionedTopic(user, topic, req.PartitionId)
+	pulsarTopic, partitionedTopic, err := b.pulsarTopic(user, topic, req.PartitionId)
 	if err != nil {
 		b.logger.Addr(addr).ClientID(clientID).Topic(topic).Error(
 			"offset fetch failed when get topic.")
@@ -948,7 +943,7 @@ func (b *Broker) OffsetFetchAction(addr net.Addr, topic, clientID, groupID strin
 		b.consumerManager[partitionedTopic+clientID] = consumerHandle
 		b.mutex.Unlock()
 	}
-	b.topicAddrManager.Set(topic, partitionedTopic, addr)
+	b.topicAddrManager.Set(pulsarTopic, partitionedTopic, addr)
 
 	if !b.checkPartitionTopicExist(group.partitionedTopic, partitionedTopic) {
 		group.partitionedTopic = append(group.partitionedTopic, partitionedTopic)
@@ -1263,7 +1258,7 @@ func (b *Broker) DisconnectAction(addr net.Addr) {
 	}
 	if !exist {
 		b.mutex.Lock()
-		delete(b.memberManager, addr)
+		delete(b.userInfoManager, addr)
 		b.mutex.Unlock()
 		return
 	}
