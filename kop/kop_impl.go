@@ -1,9 +1,9 @@
 package kop
 
 import (
-	"container/list"
 	"context"
 	"fmt"
+	"github.com/Shoothzj/gox/listx"
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/protocol-laboratory/kafka-codec-go/codec"
 	"github.com/protocol-laboratory/kafka-codec-go/knet"
@@ -797,7 +797,7 @@ func (b *Broker) OffsetCommitPartitionAction(addr net.Addr, topic, clientID stri
 		if front == nil {
 			break
 		}
-		messageIdPair := front.Value.(MessageIdPair)
+		messageIdPair := front.Value
 		// kafka commit offset maybe greater than current offset
 		if messageIdPair.Offset == req.Offset || ((messageIdPair.Offset < req.Offset) && (i == length-1)) {
 			err := b.offsetManager.CommitOffset(user.username, topic, consumerMessages.groupId, req.PartitionId, messageIdPair)
@@ -830,7 +830,7 @@ func (b *Broker) OffsetCommitPartitionAction(addr net.Addr, topic, clientID stri
 
 func (b *Broker) createConsumerHandle(partitionedTopic string, subscriptionName string, messageId pulsar.MessageID, clientId string) (*PulsarConsumerHandle, error) {
 	var (
-		handle = &PulsarConsumerHandle{messageIds: list.New()}
+		handle = &PulsarConsumerHandle{messageIds: listx.New[MessageIdPair]()}
 		err    error
 	)
 	pulsarUrl := fmt.Sprintf("pulsar://%s:%d", b.config.PulsarConfig.Host, b.config.PulsarConfig.TcpPort)

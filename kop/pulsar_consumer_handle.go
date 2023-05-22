@@ -1,7 +1,7 @@
 package kop
 
 import (
-	"container/list"
+	"github.com/Shoothzj/gox/listx"
 	"github.com/apache/pulsar-client-go/pulsar"
 	"sync"
 )
@@ -12,7 +12,7 @@ type PulsarConsumerHandle struct {
 	channel    chan pulsar.ConsumerMessage
 	client     pulsar.Client
 	consumer   pulsar.Consumer
-	messageIds *list.List
+	messageIds *listx.List[MessageIdPair]
 	mutex      sync.RWMutex
 }
 
