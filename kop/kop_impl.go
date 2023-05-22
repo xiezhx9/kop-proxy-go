@@ -88,8 +88,14 @@ func (b *Broker) Fetch(conn *knet.Conn, req *codec.FetchReq) (*codec.FetchResp, 
 	version := req.ApiVersion
 	if version == 10 || version == 11 {
 		startAt := time.Now()
+		if b.config.NetworkDebugEnable {
+			b.logger.Addr(conn.RemoteAddr()).ClientID(req.ClientId).Infof("fetch start correlation id: %d", req.CorrelationId)
+		}
 		fetchResp, err := b.ReactFetch(networkContext, req)
 		cost := float64(time.Since(startAt).Milliseconds())
+		if b.config.NetworkDebugEnable {
+			b.logger.Addr(conn.RemoteAddr()).ClientID(req.ClientId).Infof("fetch end correlation id: %d cost %f", req.CorrelationId, cost)
+		}
 		metrics.KafkaProtocolFetchLatency.Observe(cost)
 		if err != nil {
 			metrics.KafkaProtocolFetchFailCount.Inc()
@@ -110,8 +116,14 @@ func (b *Broker) FindCoordinator(conn *knet.Conn, req *codec.FindCoordinatorReq)
 	version := req.ApiVersion
 	if version == 0 || version == 3 {
 		startAt := time.Now()
+		if b.config.NetworkDebugEnable {
+			b.logger.Addr(conn.RemoteAddr()).ClientID(req.ClientId).Infof("find coordinator start correlation id: %d", req.CorrelationId)
+		}
 		findCoordinatorResp, err := b.ReactFindCoordinator(req, b.config)
 		cost := float64(time.Since(startAt).Milliseconds())
+		if b.config.NetworkDebugEnable {
+			b.logger.Addr(conn.RemoteAddr()).ClientID(req.ClientId).Infof("find coordinator end correlation id: %d, cost: %f", req.CorrelationId, cost)
+		}
 		metrics.KafkaProtocolFindCoordinatorLatency.Observe(cost)
 		if err != nil {
 			metrics.KafkaProtocolFindCoordinatorFailCount.Inc()
@@ -305,8 +317,14 @@ func (b *Broker) Produce(conn *knet.Conn, req *codec.ProduceReq) (*codec.Produce
 	version := req.ApiVersion
 	if version == 7 || version == 8 {
 		startAt := time.Now()
+		if b.config.NetworkDebugEnable {
+			b.logger.Addr(conn.RemoteAddr()).ClientID(req.ClientId).Infof("produce start correlation id: %d", req.CorrelationId)
+		}
 		produceResp, err := b.ReactProduce(networkContext, req, b.config)
 		cost := float64(time.Since(startAt).Milliseconds())
+		if b.config.NetworkDebugEnable {
+			b.logger.Addr(conn.RemoteAddr()).ClientID(req.ClientId).Infof("produce end correlation id: %d, cost: %f", req.CorrelationId, cost)
+		}
 		metrics.KafkaProtocolProduceLatency.Observe(cost)
 		if err != nil {
 			metrics.KafkaProtocolProduceFailCount.Inc()

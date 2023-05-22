@@ -56,9 +56,10 @@ type Config struct {
 	InitialDelayedJoinMs int
 	// RebalanceTickMs
 	RebalanceTickMs int
-
 	// TopicLevelMetricsDisable if true, disable topic level metrics
 	TopicLevelMetricsDisable bool
+	// NetworkDebugEnable print network layer log
+	NetworkDebugEnable bool
 
 	DebugKafkaTopicSet  set.Set[string]
 	DebugPulsarTopicSet set.Set[string]
