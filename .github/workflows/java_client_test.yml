@@ -15,11 +15,17 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+      - name: setup pulsar
+        uses: shoothzj/setup-pulsar-action@v1
+        env:
+          PULSAR_PREFIX_ALLOW_AUTO_TOPIC_CREATION_TYPE: non-partitioned
+          PULSAR_PREFIX_BROKER_ENTRY_METADATA_INTERCEPTORS: org.apache.pulsar.common.intercept.AppendIndexMetadataInterceptor
+          PULSAR_PREFIX_EXPOSING_BROKER_ENTRY_METADATA_TO_CLIENT_ENABLED: "true"
       - name: build image
         run: docker build . -t kop-integration-test
       - name: run kop
-        run: docker run --name kop-integration-test -p 9092:9092 -p 6650:6650 -p 8080:8080 -d kop-integration-test
+        run: docker run --name kop-integration-test -p 9092:9092 -d kop-integration-test
       - name: wait kop start
-        run: sleep 60
+        run: sleep 30
       - name: run java client test
         run: cd java-client-tests; mvn -B clean checkstyle:check test
