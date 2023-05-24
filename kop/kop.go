@@ -39,9 +39,9 @@ type Config struct {
 	MaxFetchWaitMs           int
 	MaxProducerRecordSize    int
 	MaxBatchSize             int
-	// PulsarTenant use for kafsar internal
+	// PulsarTenant use for kop internal
 	PulsarTenant string
-	// PulsarNamespace use for kafsar internal
+	// PulsarNamespace use for kop internal
 	PulsarNamespace string
 	// OffsetTopic use to store kafka offset
 	OffsetTopic string

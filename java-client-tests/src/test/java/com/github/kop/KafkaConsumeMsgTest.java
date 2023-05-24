@@ -1,4 +1,4 @@
-package com.github.kafsar;
+package com.github.kop;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.CommonClientConfigs;

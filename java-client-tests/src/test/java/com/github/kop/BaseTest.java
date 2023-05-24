@@ -1,4 +1,4 @@
-package com.github.kafsar;
+package com.github.kop;
 
 import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.api.PulsarClient;

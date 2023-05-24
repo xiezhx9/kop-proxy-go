@@ -1,4 +1,4 @@
-package com.github.kafsar;
+package com.github.kop;
 
 public class KafkaConst {
 

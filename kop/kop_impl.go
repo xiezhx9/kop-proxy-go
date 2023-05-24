@@ -17,7 +17,7 @@ import (
 )
 
 func (b *Broker) ConnectionOpened(conn *knet.Conn) {
-	if atomic.LoadInt32(&b.connCount) > b.config.MaxConn {
+	if b.getConnCount() > b.config.MaxConn {
 		b.logger.Addr(conn.RemoteAddr()).Info("connection reach max, refused to connect")
 		return
 	}

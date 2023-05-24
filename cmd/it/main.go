@@ -33,7 +33,7 @@ func main() {
 	config.GroupCoordinatorType = kop.GroupCoordinatorTypeMemory
 	config.InitialDelayedJoinMs = 3000
 	config.RebalanceTickMs = 100
-	e := &ItKafsarImpl{}
+	e := &ItKopImpl{}
 	impl, err := kop.NewKop(e, config)
 	if err != nil {
 		panic(err)
@@ -52,34 +52,34 @@ func main() {
 
 var pulsarClient, _ = pulsar.NewClient(pulsar.ClientOptions{URL: "pulsar://localhost:6650"})
 
-type ItKafsarImpl struct {
+type ItKopImpl struct {
 }
 
-func (e ItKafsarImpl) Auth(username string, password string, clientId string) (bool, error) {
+func (e ItKopImpl) Auth(username string, password string, clientId string) (bool, error) {
 	return true, nil
 }
 
-func (e ItKafsarImpl) AuthTopic(username string, password, clientId, topic, permissionType string) (bool, error) {
+func (e ItKopImpl) AuthTopic(username string, password, clientId, topic, permissionType string) (bool, error) {
 	return true, nil
 }
 
-func (e ItKafsarImpl) AuthTopicGroup(username string, password, clientId, consumerGroup string) (bool, error) {
+func (e ItKopImpl) AuthTopicGroup(username string, password, clientId, consumerGroup string) (bool, error) {
 	return true, nil
 }
 
-func (e ItKafsarImpl) AuthGroupTopic(topic, groupId string) bool {
+func (e ItKopImpl) AuthGroupTopic(topic, groupId string) bool {
 	return true
 }
 
-func (e ItKafsarImpl) SubscriptionName(groupId string) (string, error) {
+func (e ItKopImpl) SubscriptionName(groupId string) (string, error) {
 	return groupId, nil
 }
 
-func (e ItKafsarImpl) PulsarTopic(username, topic string) (string, error) {
+func (e ItKopImpl) PulsarTopic(username, topic string) (string, error) {
 	return "persistent://public/default/" + topic, nil
 }
 
-func (e ItKafsarImpl) PartitionNum(username, topic string) (int, error) {
+func (e ItKopImpl) PartitionNum(username, topic string) (int, error) {
 	pulsarTopic, err := e.PulsarTopic(username, topic)
 	if err != nil {
 		return 0, err
@@ -91,10 +91,10 @@ func (e ItKafsarImpl) PartitionNum(username, topic string) (int, error) {
 	return len(partitions), nil
 }
 
-func (e ItKafsarImpl) ListTopic(username string) ([]string, error) {
+func (e ItKopImpl) ListTopic(username string) ([]string, error) {
 	return nil, nil
 }
 
-func (e ItKafsarImpl) HasFlowQuota(username, topic string) bool {
+func (e ItKopImpl) HasFlowQuota(username, topic string) bool {
 	return true
 }
