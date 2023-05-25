@@ -15,16 +15,19 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
       - name: setup pulsar
         uses: shoothzj/setup-pulsar-action@v1
         env:
           PULSAR_PREFIX_ALLOW_AUTO_TOPIC_CREATION_TYPE: non-partitioned
           PULSAR_PREFIX_BROKER_ENTRY_METADATA_INTERCEPTORS: org.apache.pulsar.common.intercept.AppendIndexMetadataInterceptor
           PULSAR_PREFIX_EXPOSING_BROKER_ENTRY_METADATA_TO_CLIENT_ENABLED: "true"
-      - name: build image
-        run: docker build . -t kop-integration-test
+      - name: build kop binary
+        run: cd cmd/it && go build -o kop .
       - name: run kop
-        run: docker run --name kop-integration-test -p 9092:9092 -d kop-integration-test
+        run: nohup ./cmd/it/kop >kop.log 2>&1 &
       - name: wait kop start
         uses: shoothzj/host-available-check-action@v1
         with:
@@ -40,4 +43,4 @@ jobs:
       - name: print kop logs
         if: failure()
         continue-on-error: true
-        run: docker logs kop-integration-test
+        run: cat kop.log
