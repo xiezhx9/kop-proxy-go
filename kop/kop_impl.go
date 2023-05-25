@@ -756,8 +756,13 @@ func (b *Broker) OffsetListPartitionAction(addr net.Addr, topic, clientID string
 					ErrorCode:   codec.UNKNOWN_SERVER_ERROR,
 				}, nil
 			}
-			b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Infof(
-				"kafka topic previous message id: %s, when trigger offset list partition action", lastedMsg.ID())
+			if lastedMsg.Index() == nil {
+				b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Infof(
+					"kafka topic previous message id: %s, when trigger offset list partition action", lastedMsg.ID())
+			} else {
+				b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Infof(
+					"kafka topic previous message id: %s offset: %d, when trigger offset list partition action", lastedMsg.ID(), *lastedMsg.Index())
+			}
 			offset = convOffset(lastedMsg, b.config.ContinuousOffset) + 1
 		}
 	}
