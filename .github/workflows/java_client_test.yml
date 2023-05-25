@@ -33,3 +33,11 @@ jobs:
           check_tcp_port: 9092
       - name: run java client test
         run: cd java-client-tests; mvn -B clean checkstyle:check test
+      - name: print pulsar logs
+        if: failure()
+        continue-on-error: true
+        run: docker logs pulsar
+      - name: print kop logs
+        if: failure()
+        continue-on-error: true
+        run: docker logs kop-integration-test
