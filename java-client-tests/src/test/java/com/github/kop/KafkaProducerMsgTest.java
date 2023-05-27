@@ -39,6 +39,7 @@ public class KafkaProducerMsgTest extends BaseTest {
     @Timeout(60)
     public void produceMsgSuccess() throws Exception {
         String topic = UUID.randomUUID().toString();
+        pulsarAdmin.topics().createPartitionedTopic("public/default/" + topic, 1);
         String msg = UUID.randomUUID().toString();
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaConst.BROKERS);
@@ -83,6 +84,7 @@ public class KafkaProducerMsgTest extends BaseTest {
     @Timeout(60)
     public void produceMsgAckAllSuccess() throws Exception {
         String topic = UUID.randomUUID().toString();
+        pulsarAdmin.topics().createPartitionedTopic("public/default/" + topic, 1);
         String msg = UUID.randomUUID().toString();
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaConst.BROKERS);
@@ -127,6 +129,7 @@ public class KafkaProducerMsgTest extends BaseTest {
     @Timeout(60)
     public void produceMsgAck0Success() throws Exception {
         String topic = UUID.randomUUID().toString();
+        pulsarAdmin.topics().createPartitionedTopic("public/default/" + topic, 1);
         String msg = UUID.randomUUID() + "1";
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaConst.BROKERS);

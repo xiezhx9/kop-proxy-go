@@ -40,6 +40,7 @@ public class KafkaConsumeMsgTest extends BaseTest {
     @Timeout(60)
     public void consumeEarliestMsgSuccess() throws Exception {
         String topic = UUID.randomUUID().toString();
+        pulsarAdmin.topics().createPartitionedTopic("public/default/" + topic, 1);
         ProducerBuilder<String> producerBuilder = pulsarClient.newProducer(Schema.STRING).enableBatching(false);
         Producer<String> producer = producerBuilder.topic(topic).create();
         String msg = UUID.randomUUID().toString();
@@ -76,6 +77,7 @@ public class KafkaConsumeMsgTest extends BaseTest {
     @Timeout(60)
     public void consumeLatestMsgSuccess() throws Exception {
         String topic = UUID.randomUUID().toString();
+        pulsarAdmin.topics().createPartitionedTopic("public/default/" + topic, 1);
         ProducerBuilder<String> producerBuilder = pulsarClient.newProducer(Schema.STRING).enableBatching(false);
         Producer<String> producer = producerBuilder.topic(topic).create();
         String msg = UUID.randomUUID().toString();
@@ -117,6 +119,7 @@ public class KafkaConsumeMsgTest extends BaseTest {
     @Timeout(60)
     public void retryConsumeLatestMsgAfterClose() throws Exception {
         String topic = UUID.randomUUID().toString();
+        pulsarAdmin.topics().createPartitionedTopic("public/default/" + topic, 1);
         ProducerBuilder<String> producerBuilder = pulsarClient.newProducer(Schema.STRING).enableBatching(false);
         Producer<String> producer = producerBuilder.topic(topic + "-partition-0").create();
         String msg = UUID.randomUUID().toString();
@@ -181,6 +184,7 @@ public class KafkaConsumeMsgTest extends BaseTest {
     @Timeout(60)
     public void retryConsumeEarliestMsgAfterClose() throws Exception {
         String topic = UUID.randomUUID().toString();
+        pulsarAdmin.topics().createPartitionedTopic("public/default/" + topic, 1);
         ProducerBuilder<String> producerBuilder = pulsarClient.newProducer(Schema.STRING).enableBatching(false);
         Producer<String> producer = producerBuilder.topic(topic + "-partition-0").create();
         String msg = UUID.randomUUID().toString();
@@ -239,8 +243,8 @@ public class KafkaConsumeMsgTest extends BaseTest {
     @Timeout(60)
     public void multiConsumerTest() throws Exception {
         String topic = UUID.randomUUID().toString();
-        ProducerBuilder<String> producerBuilder = pulsarClient.newProducer(Schema.STRING).enableBatching(false);
         pulsarAdmin.topics().createPartitionedTopic("public/default/" + topic, 2);
+        ProducerBuilder<String> producerBuilder = pulsarClient.newProducer(Schema.STRING).enableBatching(false);
         Producer<String> producer = producerBuilder.topic(topic).create();
         String msg = UUID.randomUUID().toString();
         producer.send(msg);
@@ -281,6 +285,7 @@ public class KafkaConsumeMsgTest extends BaseTest {
     @Timeout(60)
     public void ConsumeEarliestWithNoMsgTest() throws Exception {
         String topic = UUID.randomUUID().toString();
+        pulsarAdmin.topics().createPartitionedTopic("public/default/" + topic, 1);
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaConst.BROKERS);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
@@ -308,6 +313,7 @@ public class KafkaConsumeMsgTest extends BaseTest {
     @Timeout(60)
     public void ConsumeLatestWithNoMsgTest() throws Exception {
         String topic = UUID.randomUUID().toString();
+        pulsarAdmin.topics().createPartitionedTopic("public/default/" + topic, 1);
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaConst.BROKERS);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());

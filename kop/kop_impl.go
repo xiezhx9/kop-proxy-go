@@ -483,7 +483,7 @@ func (b *Broker) FetchPartition(addr net.Addr, kafkaTopic, clientID string, req 
 		}, nil
 	}
 	b.mutex.RLock()
-	consumerMetadata, exist := b.consumerManager[partitionedTopic+clientID]
+	consumerHandle, exist := b.consumerManager[partitionedTopic+clientID]
 	if !exist {
 		groupId, exist := b.topicGroupManager[partitionedTopic+clientID]
 		b.mutex.RUnlock()
@@ -521,10 +521,10 @@ OUT:
 		if !flowControl {
 			break
 		}
-		consumerMetadata.mutex.Lock()
-		message, err := consumerMetadata.consumer.Receive(ctx)
+		consumerHandle.mutex.Lock()
+		message, err := consumerHandle.consumer.Receive(ctx)
 		if err != nil {
-			consumerMetadata.mutex.Unlock()
+			consumerHandle.mutex.Unlock()
 			if ctx.Err() != nil {
 				break OUT
 			}
@@ -538,11 +538,11 @@ OUT:
 				"message received. kafka topic from pulsar topic: %s, partition: %d, offset: %d, messageId: %s",
 				partitionedTopic, req.PartitionId, offset, message.ID())
 		}
-		err = consumerMetadata.consumer.Ack(message)
+		err = consumerHandle.consumer.Ack(message)
 		if err != nil {
 			b.logger.Addr(addr).ClientID(clientID).Topic(kafkaTopic).Errorf("ack topic message failed: %s", err)
 		}
-		consumerMetadata.mutex.Unlock()
+		consumerHandle.mutex.Unlock()
 		byteLength = byteLength + utils.CalculateMsgLength(message)
 		if fistMessage {
 			fistMessage = false
@@ -568,12 +568,12 @@ OUT:
 				partitionedTopic, req.PartitionId, offset, message.ID())
 		}
 		recordBatch.Records = append(recordBatch.Records, &record)
-		consumerMetadata.mutex.Lock()
-		consumerMetadata.messageIds.PushBack(MessageIdPair{
+		consumerHandle.mutex.Lock()
+		consumerHandle.messageIds.PushBack(MessageIdPair{
 			MessageId: message.ID(),
 			Offset:    offset,
 		})
-		consumerMetadata.mutex.Unlock()
+		consumerHandle.mutex.Unlock()
 		if byteLength > minBytes && time.Since(start).Milliseconds() >= int64(b.config.MinFetchWaitMs) {
 			break
 		}
