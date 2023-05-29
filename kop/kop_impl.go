@@ -403,7 +403,7 @@ func (b *Broker) PartitionNumAction(addr net.Addr, topic string) (int, error) {
 	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
-		b.logger.Addr(addr).Topic(topic).Error("get partitionNum failed. user is not found.")
+		b.logger.Addr(addr).Topic(topic).Error("get partitionNum failed. user is not found")
 		return 0, fmt.Errorf("user not found")
 	}
 	num, err := b.server.PartitionNum(user.username, topic)
@@ -420,7 +420,7 @@ func (b *Broker) TopicListAction(addr net.Addr) ([]string, error) {
 	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
-		b.logger.Addr(addr).Error("get topics list failed. user not found.")
+		b.logger.Addr(addr).Error("get topics list failed. user not found")
 		return nil, fmt.Errorf("user not found")
 	}
 	topic, err := b.server.ListTopic(user.username)
@@ -466,7 +466,7 @@ func (b *Broker) FetchPartition(addr net.Addr, kafkaTopic, clientID string, req 
 	records := make([]*codec.Record, 0)
 	recordBatch := codec.RecordBatch{Records: records}
 	if !exist {
-		b.logger.Addr(addr).ClientID(clientID).Topic(kafkaTopic).Error("fetch partition failed when get userinfo by addr.")
+		b.logger.Addr(addr).ClientID(clientID).Topic(kafkaTopic).Error("fetch partition failed when get userinfo by addr")
 		return &codec.FetchPartitionResp{
 			PartitionIndex: req.PartitionId,
 			ErrorCode:      codec.UNKNOWN_SERVER_ERROR,
@@ -475,7 +475,7 @@ func (b *Broker) FetchPartition(addr net.Addr, kafkaTopic, clientID string, req 
 	}
 	partitionedTopic, err := b.partitionedTopic(user, kafkaTopic, req.PartitionId)
 	if err != nil {
-		b.logger.Addr(addr).ClientID(clientID).Topic(kafkaTopic).Error("fetch partition failed when get topic.")
+		b.logger.Addr(addr).ClientID(clientID).Topic(kafkaTopic).Error("fetch partition failed when get topic")
 		return &codec.FetchPartitionResp{
 			PartitionIndex: req.PartitionId,
 			ErrorCode:      codec.UNKNOWN_SERVER_ERROR,
@@ -631,7 +631,7 @@ func (b *Broker) GroupLeaveAction(addr net.Addr, req *codec.LeaveGroupReq) (*cod
 	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
-		b.logger.Addr(addr).ClientID(req.ClientId).Error("username not found in leave group.")
+		b.logger.Addr(addr).ClientID(req.ClientId).Error("username not found in leave group")
 		return &codec.LeaveGroupResp{
 			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
 		}, nil
@@ -679,7 +679,7 @@ func (b *Broker) GroupSyncAction(addr net.Addr, req *codec.SyncGroupReq) (*codec
 	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
-		b.logger.Addr(addr).ClientID(req.ClientId).Error("username not found in sync group.")
+		b.logger.Addr(addr).ClientID(req.ClientId).Error("username not found in sync group")
 		return &codec.SyncGroupResp{
 			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
 		}, nil
@@ -702,7 +702,7 @@ func (b *Broker) OffsetListPartitionAction(addr net.Addr, topic, clientID string
 	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
-		b.logger.Addr(addr).ClientID(clientID).Topic(topic).Error("offset list failed when get username by addr.")
+		b.logger.Addr(addr).ClientID(clientID).Topic(topic).Error("offset list failed when get username by addr")
 		return &codec.ListOffsetsPartitionResp{
 			PartitionId: req.PartitionId,
 			ErrorCode:   codec.UNKNOWN_SERVER_ERROR,
@@ -721,7 +721,7 @@ func (b *Broker) OffsetListPartitionAction(addr net.Addr, topic, clientID string
 	consumerHandle, exist := b.consumerManager[partitionedTopic+clientID]
 	b.mutex.RUnlock()
 	if !exist {
-		b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Error("offset list failed, topic does not exist.")
+		b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Error("offset list failed, topic does not exist")
 		return &codec.ListOffsetsPartitionResp{
 			PartitionId: req.PartitionId,
 			ErrorCode:   codec.UNKNOWN_SERVER_ERROR,
@@ -778,7 +778,7 @@ func (b *Broker) OffsetCommitPartitionAction(addr net.Addr, topic, clientID stri
 	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
-		b.logger.Addr(addr).ClientID(clientID).Topic(topic).Error("offset commit failed when get userinfo by addr.")
+		b.logger.Addr(addr).ClientID(clientID).Topic(topic).Error("offset commit failed when get userinfo by addr")
 		return &codec.OffsetCommitPartitionResp{
 			PartitionId: req.PartitionId,
 			ErrorCode:   codec.UNKNOWN_SERVER_ERROR,
@@ -801,12 +801,12 @@ func (b *Broker) OffsetCommitPartitionAction(addr net.Addr, topic, clientID stri
 			group, err := b.groupCoordinator.GetGroup(user.username, groupId)
 			if err == nil && group.groupStatus != Stable {
 				b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Warn(
-					"group is preparing rebalance.")
+					"group is preparing rebalance")
 				return &codec.OffsetCommitPartitionResp{ErrorCode: codec.REBALANCE_IN_PROGRESS}, nil
 			}
 		}
 		b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Error(
-			"commit offset failed, does not exist.")
+			"commit offset failed, does not exist")
 		return &codec.OffsetCommitPartitionResp{ErrorCode: codec.UNKNOWN_TOPIC_ID}, nil
 	}
 	b.mutex.RUnlock()
@@ -906,7 +906,7 @@ func (b *Broker) OffsetFetchAction(addr net.Addr, topic, clientID, groupID strin
 	b.mutex.RUnlock()
 	if !exist {
 		b.logger.Addr(addr).ClientID(clientID).Topic(topic).Error(
-			"offset fetch failed when get userinfo by addr.")
+			"offset fetch failed when get userinfo by addr")
 		return &codec.OffsetFetchPartitionResp{
 			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
 		}, nil
@@ -914,7 +914,7 @@ func (b *Broker) OffsetFetchAction(addr net.Addr, topic, clientID, groupID strin
 	pulsarTopic, partitionedTopic, err := b.pulsarTopic(user, topic, req.PartitionId)
 	if err != nil {
 		b.logger.Addr(addr).ClientID(clientID).Topic(topic).Error(
-			"offset fetch failed when get topic.")
+			"offset fetch failed when get topic")
 		return &codec.OffsetFetchPartitionResp{
 			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
 		}, nil
@@ -989,7 +989,7 @@ func (b *Broker) OffsetLeaderEpochAction(addr net.Addr, topic string, req *codec
 	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
-		b.logger.Addr(addr).Topic(topic).Error("offset fetch failed when get userinfo by addr.")
+		b.logger.Addr(addr).Topic(topic).Error("offset fetch failed when get userinfo by addr")
 		return &codec.OffsetForLeaderEpochPartitionResp{
 			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
 		}, nil
@@ -997,21 +997,21 @@ func (b *Broker) OffsetLeaderEpochAction(addr net.Addr, topic string, req *codec
 	b.logger.Addr(addr).Topic(topic).Infof("offset leader epoch topic, partition: %d", req.PartitionId)
 	partitionedTopic, err := b.partitionedTopic(user, topic, req.PartitionId)
 	if err != nil {
-		b.logger.Addr(addr).Topic(topic).Error("get partitioned topic failed.")
+		b.logger.Addr(addr).Topic(topic).Error("get partitioned topic failed")
 		return &codec.OffsetForLeaderEpochPartitionResp{
 			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
 		}, nil
 	}
 	latestMsgId, err := utils.GetLatestMsgId(partitionedTopic, b.pAdmin)
 	if err != nil {
-		b.logger.Addr(addr).Topic(topic).Error("get last msgId failed.")
+		b.logger.Addr(addr).Topic(topic).Error("get last msgId failed")
 		return &codec.OffsetForLeaderEpochPartitionResp{
 			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
 		}, nil
 	}
 	msg, err := utils.ReadLatestMsg(partitionedTopic, b.config.MaxFetchWaitMs, latestMsgId, b.pClient)
 	if err != nil {
-		b.logger.Addr(addr).Topic(topic).Error("get last msgId failed.")
+		b.logger.Addr(addr).Topic(topic).Error("get last msgId failed")
 		return &codec.OffsetForLeaderEpochPartitionResp{
 			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
 		}, nil
@@ -1041,7 +1041,7 @@ func (b *Broker) getProducer(addr net.Addr, username, pulsarTopic string) (pulsa
 			b.logger.Addr(addr).Topic(pulsarTopic).Errorf("create producer failed. err: %v", err)
 			return nil, err
 		}
-		b.logger.Addr(addr).Topic(pulsarTopic).Info("create producer success.")
+		b.logger.Addr(addr).Topic(pulsarTopic).Info("create producer success")
 		b.producerManager[addr] = producer
 	}
 	b.mutex.Unlock()
@@ -1161,7 +1161,7 @@ func (b *Broker) HeartBeatAction(addr net.Addr, req codec.HeartbeatReq) *codec.H
 	user, exist := b.userInfoManager[addr]
 	b.mutex.RUnlock()
 	if !exist {
-		b.logger.Addr(addr).Error("heartbeat user not exist when get userinfo by addr.")
+		b.logger.Addr(addr).Error("heartbeat user not exist when get userinfo by addr")
 		return &codec.HeartbeatResp{
 			ErrorCode: codec.UNKNOWN_SERVER_ERROR,
 		}
@@ -1183,7 +1183,7 @@ func (b *Broker) HeartBeatAction(addr net.Addr, req codec.HeartbeatReq) *codec.H
 				if err := b.offsetManager.GracefulSendOffsetMessage(topic, consumerHandle); err != nil {
 					b.logger.Addr(addr).Errorf("graceful send offset message failed: %v", err)
 				}
-				b.logger.Addr(addr).Topic(topic).Info("success close consumer topic due to heartbeat failed.")
+				b.logger.Addr(addr).Topic(topic).Info("success close consumer topic due to heartbeat failed")
 				delete(b.consumerManager, topic+req.ClientId)
 				consumerHandle = nil
 			}
@@ -1213,7 +1213,7 @@ func (b *Broker) ConsumePulsarConsumerSize() int {
 }
 
 func (b *Broker) DisconnectAll() {
-	b.logger.Info("connection all closed.")
+	b.logger.Info("connection all closed")
 
 	for addr := range b.producerManager {
 		conn, loaded := b.ConnMap.Load(addr.String())
@@ -1223,13 +1223,13 @@ func (b *Broker) DisconnectAll() {
 
 		err := conn.Close()
 		if err != nil {
-			b.logger.Addr(addr).Errorf("conn closed failed: %v.", err.Error())
+			b.logger.Addr(addr).Errorf("conn closed failed: %v", err.Error())
 		}
 	}
 }
 
 func (b *Broker) DisconnectAllLocalAddr(localAddr string) {
-	b.logger.Infof("connection all local addr %s closed.", localAddr)
+	b.logger.Infof("connection all local addr %s closed", localAddr)
 
 	for addr := range b.producerManager {
 		conn, loaded := b.ConnMap.Load(addr.String())
@@ -1243,13 +1243,13 @@ func (b *Broker) DisconnectAllLocalAddr(localAddr string) {
 
 		err := conn.Close()
 		if err != nil {
-			b.logger.Addr(addr).Errorf("conn closed failed: %v.", err.Error())
+			b.logger.Addr(addr).Errorf("conn closed failed: %v", err.Error())
 		}
 	}
 }
 
 func (b *Broker) DisconnectRemoteAddr(addrList []string) {
-	b.logger.Infof("connection remote addr closed : %v.", addrList)
+	b.logger.Infof("connection remote addr closed : %v", addrList)
 
 	for _, addr := range addrList {
 		conn, loaded := b.ConnMap.Load(addr)
@@ -1259,13 +1259,13 @@ func (b *Broker) DisconnectRemoteAddr(addrList []string) {
 
 		err := conn.Close()
 		if err != nil {
-			b.logger.Addr(conn.RemoteAddr()).Errorf("conn closed failed: %v.", err.Error())
+			b.logger.Addr(conn.RemoteAddr()).Errorf("conn closed failed: %v", err.Error())
 		}
 	}
 }
 
 func (b *Broker) DisconnectAction(addr net.Addr) {
-	b.logger.Addr(addr).Info("lost connection.")
+	b.logger.Addr(addr).Info("lost connection")
 	if addr == nil {
 		return
 	}
