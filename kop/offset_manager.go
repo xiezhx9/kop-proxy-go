@@ -15,7 +15,7 @@ type OffsetManager interface {
 
 	GracefulSendOffsetMessages(map[string]*PulsarConsumerHandle) error
 
-	GracefulSendOffsetMessage(string, *PulsarConsumerHandle) error
+	GracefulSendOffsetMessage(partitionTopic string, consumerHandle *PulsarConsumerHandle) error
 
 	GetOffsetMap() map[string]MessageIdPair
 
