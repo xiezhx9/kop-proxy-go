@@ -710,7 +710,7 @@ func (b *Broker) OffsetListPartitionAction(addr net.Addr, topic, clientID string
 	b.logger.Addr(addr).ClientID(clientID).Topic(topic).Infof("offset list topic, partition: %d", req.PartitionId)
 	partitionedTopic, err := b.partitionedTopic(user, topic, req.PartitionId)
 	if err != nil {
-		b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Errorf("get topic failed. err: %s", err)
+		b.logger.Addr(addr).ClientID(clientID).PartitionTopic(partitionedTopic).Errorf("get topic failed. err: %s", err)
 		return &codec.ListOffsetsPartitionResp{
 			PartitionId: req.PartitionId,
 			ErrorCode:   codec.UNKNOWN_SERVER_ERROR,
@@ -720,7 +720,7 @@ func (b *Broker) OffsetListPartitionAction(addr net.Addr, topic, clientID string
 	consumerHandle, exist := b.consumerManager[partitionedTopic+clientID]
 	b.mutex.RUnlock()
 	if !exist {
-		b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Error("offset list failed, topic does not exist")
+		b.logger.Addr(addr).ClientID(clientID).PartitionTopic(partitionedTopic).Error("offset list failed, topic does not exist")
 		return &codec.ListOffsetsPartitionResp{
 			PartitionId: req.PartitionId,
 			ErrorCode:   codec.UNKNOWN_SERVER_ERROR,
@@ -749,17 +749,17 @@ func (b *Broker) OffsetListPartitionAction(addr net.Addr, topic, clientID string
 			err := consumerHandle.consumer.Seek(lastedMsg.ID())
 			consumerHandle.mutex.Unlock()
 			if err != nil {
-				b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Errorf("offset list failed: %s", err)
+				b.logger.Addr(addr).ClientID(clientID).PartitionTopic(partitionedTopic).Errorf("offset list failed: %s", err)
 				return &codec.ListOffsetsPartitionResp{
 					PartitionId: req.PartitionId,
 					ErrorCode:   codec.UNKNOWN_SERVER_ERROR,
 				}, nil
 			}
 			if lastedMsg.Index() == nil {
-				b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Infof(
+				b.logger.Addr(addr).ClientID(clientID).PartitionTopic(partitionedTopic).Infof(
 					"kafka topic previous message id: %s, when trigger offset list partition action", lastedMsg.ID())
 			} else {
-				b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Infof(
+				b.logger.Addr(addr).ClientID(clientID).PartitionTopic(partitionedTopic).Infof(
 					"kafka topic previous message id: %s offset: %d, when trigger offset list partition action", lastedMsg.ID(), *lastedMsg.Index())
 			}
 			offset = convOffset(lastedMsg, b.config.ContinuousOffset) + 1
@@ -799,12 +799,12 @@ func (b *Broker) OffsetCommitPartitionAction(addr net.Addr, topic, clientID stri
 		if exist {
 			group, err := b.groupCoordinator.GetGroup(user.username, groupId)
 			if err == nil && group.groupStatus != Stable {
-				b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Warn(
+				b.logger.Addr(addr).ClientID(clientID).PartitionTopic(partitionedTopic).Warn(
 					"group is preparing rebalance")
 				return &codec.OffsetCommitPartitionResp{ErrorCode: codec.REBALANCE_IN_PROGRESS}, nil
 			}
 		}
-		b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Error(
+		b.logger.Addr(addr).ClientID(clientID).PartitionTopic(partitionedTopic).Error(
 			"commit offset failed, does not exist")
 		return &codec.OffsetCommitPartitionResp{ErrorCode: codec.UNKNOWN_TOPIC_ID}, nil
 	}
@@ -830,7 +830,7 @@ func (b *Broker) OffsetCommitPartitionAction(addr net.Addr, topic, clientID stri
 					ErrorCode:   codec.UNKNOWN_SERVER_ERROR,
 				}, nil
 			}
-			b.logger.Addr(addr).ClientID(clientID).Topic(partitionedTopic).Infof(
+			b.logger.Addr(addr).ClientID(clientID).PartitionTopic(partitionedTopic).Infof(
 				"ack topic, messageID: %s, offset: %d", messageIdPair.MessageId, messageIdPair.Offset)
 			consumerMessages.mutex.Lock()
 			consumerMessages.messageIds.Remove(front)

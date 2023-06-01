@@ -6,10 +6,11 @@ import (
 )
 
 const (
-	FieldsAddr     = "addr"
-	FieldsClientID = "clientId"
-	FieldsGroupID  = "groupId"
-	FieldsTopic    = "topic"
+	FieldsAddr          = "addr"
+	FieldsClientID      = "clientId"
+	FieldsTopic         = "topic"
+	FieldsGroupID       = "groupId"
+	FilesPartitionTopic = "partitionTopic"
 )
 
 type Logger interface {
@@ -17,6 +18,7 @@ type Logger interface {
 	ClientID(id string) Logger
 	Topic(topic string) Logger
 	GroupID(id string) Logger
+	PartitionTopic(topic string) Logger
 
 	Debug(args ...interface{})
 	Info(args ...interface{})
@@ -64,10 +66,18 @@ func (l *logrusWrapper) Topic(topic string) Logger {
 	}
 }
 
-func (l *logrusWrapper) GroupID(id string) Logger {
+func (l *logrusWrapper) GroupID(groupId string) Logger {
 	return &logrusWrapper{
 		l: l.l.WithFields(logrus.Fields{
-			FieldsGroupID: id,
+			FieldsGroupID: groupId,
+		}),
+	}
+}
+
+func (l *logrusWrapper) PartitionTopic(partitionTopic string) Logger {
+	return &logrusWrapper{
+		l: l.l.WithFields(logrus.Fields{
+			FilesPartitionTopic: partitionTopic,
 		}),
 	}
 }
