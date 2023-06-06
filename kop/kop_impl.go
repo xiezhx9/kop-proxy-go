@@ -18,6 +18,7 @@ import (
 func (b *Broker) ConnectionOpened(conn *knet.Conn) {
 	if b.getConnCount() > b.config.MaxConn {
 		b.logger.Addr(conn.RemoteAddr()).Info("connection reach max, refused to connect")
+		_ = conn.Close() // close connection when reach max_conn
 		return
 	}
 
