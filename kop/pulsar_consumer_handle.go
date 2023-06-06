@@ -5,6 +5,7 @@ import (
 	"github.com/Shoothzj/gox/listx"
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/protocol-laboratory/kop-proxy-go/constant"
+	"github.com/protocol-laboratory/kop-proxy-go/metrics"
 	"net"
 	"sync"
 )
@@ -24,6 +25,7 @@ func (pc *PulsarConsumerHandle) close() {
 	if pc.consumer != nil {
 		pc.consumer.Close()
 		pc.consumer = nil
+		metrics.KafkaPulsarConsumerCount.Dec()
 	}
 	if pc.client != nil {
 		pc.client.Close()
@@ -62,6 +64,7 @@ func (b *Broker) createConsumer(addr net.Addr, username, clientID, kafkaTopic, p
 	consumerHandle.username = username
 	consumerHandle.address = addr.String()
 	b.consumerManager[partitionTopic+clientID] = consumerHandle
+	metrics.KafkaPulsarConsumerCount.Inc()
 	b.logger.Addr(addr).ClientID(clientID).PartitionTopic(partitionTopic).Infof("create consumer success")
 	return nil
 }

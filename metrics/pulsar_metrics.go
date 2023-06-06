@@ -36,3 +36,13 @@ var (
 		[]string{"kafka_topic", "pulsar_topic"},
 	)
 )
+
+// kop application metrics
+var (
+	KafkaPulsarProducerCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: prometheus.BuildFQName(namespace, "pulsar", "producer_total"),
+	})
+	KafkaPulsarConsumerCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: prometheus.BuildFQName(namespace, "pulsar", "consumer_total"),
+	})
+)

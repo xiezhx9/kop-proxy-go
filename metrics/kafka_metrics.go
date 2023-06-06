@@ -202,3 +202,10 @@ var (
 			Objectives: objectives},
 	)
 )
+
+// kop application metrics
+var (
+	KafkaTcpConnectCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: prometheus.BuildFQName(namespace, "kafka", "tcp_connect_total"),
+	})
+)

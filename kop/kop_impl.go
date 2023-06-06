@@ -22,10 +22,9 @@ func (b *Broker) ConnectionOpened(conn *knet.Conn) {
 		return
 	}
 
+	metrics.KafkaTcpConnectCount.Inc()
 	b.ConnMap.Store(conn.RemoteAddr().String(), conn.Conn)
-
 	count := atomic.AddInt32(&b.connCount, 1)
-
 	b.logger.Addr(conn.RemoteAddr()).Infof("new connection opened, connCount %d", count)
 }
 
@@ -39,6 +38,7 @@ func (b *Broker) ConnectionClosed(conn *knet.Conn) {
 	if exists {
 		b.SaslMap.Delete(conn.RemoteAddr().String())
 		atomic.AddInt32(&b.connCount, -1)
+		metrics.KafkaTcpConnectCount.Dec()
 	}
 }
 
@@ -986,6 +986,7 @@ func (b *Broker) getProducer(addr net.Addr, username, pulsarTopic string) (pulsa
 			b.logger.Addr(addr).Topic(pulsarTopic).Errorf("create producer failed. err: %v", err)
 			return nil, err
 		}
+		metrics.KafkaPulsarProducerCount.Inc()
 		b.logger.Addr(addr).Topic(pulsarTopic).Info("create producer success")
 		b.producerManager[addr] = producer
 	}
@@ -1223,6 +1224,7 @@ func (b *Broker) DisconnectAction(addr net.Addr) {
 		producer.Close()
 		b.mutex.Lock()
 		delete(b.producerManager, addr)
+		metrics.KafkaPulsarProducerCount.Dec()
 		b.mutex.Unlock()
 	}
 	if !exist {
