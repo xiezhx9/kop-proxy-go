@@ -15,6 +15,6 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
       - name: Run Go Mod Check Action
-        uses: Shoothzj/go-mod-check-action@main
+        uses: hezhangjian/go-mod-check-action@main
         with:
           prohibitIndirectDepUpdate: 'true'

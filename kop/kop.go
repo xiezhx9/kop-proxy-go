@@ -2,8 +2,8 @@ package kop
 
 import (
 	"fmt"
-	"github.com/Shoothzj/gox/set"
-	"github.com/Shoothzj/gox/syncx"
+	"github.com/hezhangjian/gox/set"
+	"github.com/hezhangjian/gox/syncx"
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/pkg/errors"
 	"github.com/protocol-laboratory/kafka-codec-go/codec"

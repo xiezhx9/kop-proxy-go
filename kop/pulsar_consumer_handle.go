@@ -2,7 +2,7 @@ package kop
 
 import (
 	"fmt"
-	"github.com/Shoothzj/gox/listx"
+	"github.com/hezhangjian/gox/listx"
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/protocol-laboratory/kop-proxy-go/constant"
 	"github.com/protocol-laboratory/kop-proxy-go/metrics"

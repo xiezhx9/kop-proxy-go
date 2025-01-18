@@ -1,6 +1,6 @@
 package utils
 
-import "github.com/Shoothzj/gox/set"
+import "github.com/hezhangjian/gox/set"
 
 func DebugTopicMatch(kSet, pSet set.Set[string], kTopic, pTopic string) bool {
 	return DebugKafkaTopicMatch(kSet, kTopic) || DebugPulsarPartitionTopicMatch(pSet, pTopic)

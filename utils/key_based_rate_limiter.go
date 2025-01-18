@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/Shoothzj/gox/syncx"
+	"github.com/hezhangjian/gox/syncx"
 	"golang.org/x/time/rate"
 	"time"
 )

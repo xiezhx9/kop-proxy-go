@@ -3,7 +3,7 @@ module github.com/protocol-laboratory/kop-proxy-go
 go 1.20
 
 require (
-	github.com/Shoothzj/gox v0.0.0-20230519043040-c113104c124a
+	github.com/hezhangjian/gox v0.0.0-20230519043040-c113104c124a
 	github.com/apache/pulsar-client-go v0.10.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/gogo/protobuf v1.3.2

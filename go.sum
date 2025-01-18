@@ -14,8 +14,8 @@ github.com/DataDog/zstd v1.5.0/go.mod h1:g4AWEaM3yOg3HYfnJ3YIawPnVdXJh9QME85blwS
 github.com/Microsoft/go-winio v0.5.2 h1:a9IhgEQBCUEk6QCdml9CiJGhAws+YwffDHEMp1VMrpA=
 github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v8QkMxJ6pZY=
 github.com/Microsoft/hcsshim v0.9.7 h1:mKNHW/Xvv1aFH87Jb6ERDzXTJTLPlmzfZ28VBFD/bfg=
-github.com/Shoothzj/gox v0.0.0-20230519043040-c113104c124a h1:7mCkQusIzgYrtqPraZdInWFGV0OTWRhvOdnmAphH+8Q=
-github.com/Shoothzj/gox v0.0.0-20230519043040-c113104c124a/go.mod h1:QCFRoh5wevxlgrq7yi9Q674w/GhwiEWvpzGaZ4FhSiI=
+github.com/hezhangjian/gox v0.0.0-20230519043040-c113104c124a h1:7mCkQusIzgYrtqPraZdInWFGV0OTWRhvOdnmAphH+8Q=
+github.com/hezhangjian/gox v0.0.0-20230519043040-c113104c124a/go.mod h1:QCFRoh5wevxlgrq7yi9Q674w/GhwiEWvpzGaZ4FhSiI=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/apache/pulsar-client-go v0.10.0 h1:ccwjmmaCjaE6bLYnrILpm8V4WQQ8rB3J98pOW0O2nyo=
 github.com/apache/pulsar-client-go v0.10.0/go.mod h1:l9ZNSafZdle1cpyFE5CkUL3uRYJMvoHjHHLlK0kL7c8=
